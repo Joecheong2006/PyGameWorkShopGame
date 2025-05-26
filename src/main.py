@@ -1,7 +1,7 @@
 import pygame as pg
 from Window import *
-from OpenGL.GL import *
 from opengl_util import *
+from QuadRenderer import *
 import numpy as np
 
 quad_vertex_src = """
@@ -10,12 +10,12 @@ quad_vertex_src = """
 layout(location = 0) in vec3 position;
 layout(location = 1) in vec2 texCoord;
 
-out vec2 vtex;
+out vec2 uv; 
 
 void main()
 {
     gl_Position = vec4(position, 1);
-    vtex = texCoord;
+    uv = texCoord;
 }
 """
 
@@ -23,35 +23,13 @@ quad_fragment_src = """
 #version 330 core
 
 layout(location = 0) out vec4 frag_color;
-in vec2 vtex;
+in vec2 uv;
+uniform sampler2D screenTexture;
 
 void main()
 {
-    frag_color = vec4(1, vtex, 1.0);
-}
-"""
-
-post_vertex_src = """
-#version 330 core
-layout (location = 0) in vec2 aPos;
-layout (location = 1) in vec2 aTexCoord;
-out vec2 TexCoord;
-
-void main() {
-    TexCoord = aTexCoord;
-    gl_Position = vec4(aPos, 0.0, 1.0);
-}
-"""
-
-post_fragment_src = """
-#version 330 core
-in vec2 TexCoord;
-out vec4 FragColor;
-uniform sampler2D screenTexture;
-
-void main() {
-    vec3 color = texture(screenTexture, TexCoord).rgb;
-    FragColor = vec4(color, 1.0);
+    vec3 color = texture(screenTexture, uv).rgb;
+    frag_color = vec4(color, 1.0);
 }
 """
 
@@ -92,13 +70,36 @@ class Application:
 
 class Game(Application):
     def __init__(self):
-        scale = (8, 8)
-        PIXEL_WIDTH, PIXEL_HEIGHT = 160, 90
+        scale = (4, 4)
+        PIXEL_WIDTH, PIXEL_HEIGHT = 320, 180
         WINDOW_SIZE = (PIXEL_WIDTH * scale[0], PIXEL_HEIGHT * scale[1])
 
         super().__init__(WINDOW_SIZE)
 
-        self.fb = glFramebuffer(glShaderProgram(post_vertex_src, post_fragment_src), (PIXEL_WIDTH, PIXEL_HEIGHT))
+        self.fb = glFramebuffer(glShaderProgram(
+            """
+            #version 330 core
+            layout (location = 0) in vec2 aPos;
+            layout (location = 1) in vec2 aTexCoord;
+            out vec2 TexCoord;
+
+            void main() {
+                TexCoord = aTexCoord;
+                gl_Position = vec4(aPos, 0.0, 1.0);
+            }
+            """,
+            """
+            #version 330 core
+            in vec2 TexCoord;
+            out vec4 FragColor;
+            uniform sampler2D screenTexture;
+
+            void main() {
+                vec3 color = texture(screenTexture, TexCoord).rgb;
+                FragColor = vec4(color, 1.0);
+            }
+            """
+            ), (PIXEL_WIDTH, PIXEL_HEIGHT))
 
         # Empty texture
         self.screenTex = glTexture(PIXEL_WIDTH, PIXEL_HEIGHT, GL_NEAREST)
@@ -106,6 +107,9 @@ class Game(Application):
 
         self.renderer = QuadRenderer(self.window)
         self.quad_shader = glShaderProgram(quad_vertex_src, quad_fragment_src)
+
+        self.wallpaper = glTexture.loadTexture('wallpaper.jpg', GL_NEAREST)
+
         glClearColor(0.1, 0.1, 0.1, 1)
 
     def onWindowClose(self):
@@ -126,19 +130,27 @@ class Game(Application):
 
         t = pg.time.get_ticks() * 0.001
 
-        r = 4
-        for i in range(r):
-            for j in range(r):
-                q = Quad((2.0 / r, 2.0 / r), (2.0 * i / r - 1.0 + 1.0 / r, 2.0 * j / r - 1.0 + 1.0 / r), t)
-                self.renderer.drawQuad(q)
-                if self.renderer.full:
-                    self.quad_shader.bind()
-                    self.renderer.submit()
-                    self.renderer.clearBuffer()
-                    self.renderer.drawQuad(q)
+        ratio = self.wallpaper.height / self.wallpaper.width
+        q = Quad((2, 2 * ratio), (0, 0), 0)
+        self.renderer.drawQuad(q);
+
+        # r = 4
+        # for i in range(r):
+        #     for j in range(r):
+        #         q = Quad((2.0 / r, 2.0 / r * ratio), (2.0 * i / r - 1.0 + 1.0 / r, 2.0 * j / r - 1.0 + 1.0 / r), t)
+        #         self.renderer.drawQuad(q)
+        #         if self.renderer.full:
+        #             self.quad_shader.bind()
+        #             self.renderer.submit()
+        #             self.wallpaper.bind(0)
+        #             glUniform1i(glGetUniformLocation(self.quad_shader.program, "screenTexture"), 0)
+        #             self.renderer.clearBuffer()
+        #             self.renderer.drawQuad(q)
 
         if self.renderer.vbIndex > 0:
             self.quad_shader.bind()
+            self.wallpaper.bind(0)
+            glUniform1i(glGetUniformLocation(self.quad_shader.program, "screenTexture"), 0)
             self.renderer.submit()
         
         # Render fullscreen quad with post-processing
