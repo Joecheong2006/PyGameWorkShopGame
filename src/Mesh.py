@@ -2,7 +2,7 @@ from opengl_util import *
 from pygltflib import GLTF2
 import numpy as np
 
-def load_vertices(gltf, mesh):
+def load_vertices(gltf):
     V = []
     I = []
     N = []
@@ -26,53 +26,57 @@ def load_vertices(gltf, mesh):
         5125: np.uint32,
     }
 
-    print(f'Primitives Count: {len(mesh.primitives)}')
-
     # Get the vertices for each primitive in the mesh (in this example there is only one)
-    for primitive in mesh.primitives:
-        # Get the binary data for this mesh primitive from the buffer
-        accessor = gltf.accessors[primitive.attributes.NORMAL]
-        bufferView = gltf.bufferViews[accessor.bufferView]
-        buffer = gltf.buffers[bufferView.buffer]
-        data = gltf.get_data_from_buffer_uri(buffer.uri)
+    primitivesCount = 0
+    for mesh in gltf.meshes:
+        primitivesCount += len(mesh.primitives)
+        for primitive in mesh.primitives:
+            print(f"Primitive Material Index: {primitive.material}")
+            # Get the binary data for this mesh primitive from the buffer
+            accessor = gltf.accessors[primitive.attributes.NORMAL]
+            bufferView = gltf.bufferViews[accessor.bufferView]
+            buffer = gltf.buffers[bufferView.buffer]
+            data = gltf.get_data_from_buffer_uri(buffer.uri)
 
-        offset = accessor.byteOffset + bufferView.byteOffset
-        N.extend(np.frombuffer(data, dtype=M_dtype[accessor.componentType], count=accessor.count * M_num_components[accessor.type], offset=offset))
+            offset = accessor.byteOffset + bufferView.byteOffset
+            N.extend(np.frombuffer(data, dtype=M_dtype[accessor.componentType], count=accessor.count * M_num_components[accessor.type], offset=offset))
 
-        # Get the binary data for this mesh primitive from the buffer
-        accessor = gltf.accessors[primitive.attributes.TEXCOORD_0]
-        bufferView = gltf.bufferViews[accessor.bufferView]
-        buffer = gltf.buffers[bufferView.buffer]
-        data = gltf.get_data_from_buffer_uri(buffer.uri)
+            # Get the binary data for this mesh primitive from the buffer
+            accessor = gltf.accessors[primitive.attributes.TEXCOORD_0]
+            bufferView = gltf.bufferViews[accessor.bufferView]
+            buffer = gltf.buffers[bufferView.buffer]
+            data = gltf.get_data_from_buffer_uri(buffer.uri)
 
-        offset = accessor.byteOffset + bufferView.byteOffset
-        UV.extend(np.frombuffer(data, dtype=M_dtype[accessor.componentType], count=accessor.count * M_num_components[accessor.type], offset=offset))
+            offset = accessor.byteOffset + bufferView.byteOffset
+            UV.extend(np.frombuffer(data, dtype=M_dtype[accessor.componentType], count=accessor.count * M_num_components[accessor.type], offset=offset))
 
-        # Get the binary data for this mesh primitive from the buffer
-        accessor = gltf.accessors[primitive.attributes.POSITION]
-        bufferView = gltf.bufferViews[accessor.bufferView]
-        buffer = gltf.buffers[bufferView.buffer]
-        data = gltf.get_data_from_buffer_uri(buffer.uri)
+            # Get the binary data for this mesh primitive from the buffer
+            accessor = gltf.accessors[primitive.attributes.POSITION]
+            bufferView = gltf.bufferViews[accessor.bufferView]
+            buffer = gltf.buffers[bufferView.buffer]
+            data = gltf.get_data_from_buffer_uri(buffer.uri)
 
-        offset = accessor.byteOffset + bufferView.byteOffset
-        V.extend(np.frombuffer(data, dtype=M_dtype[accessor.componentType], count=accessor.count * M_num_components[accessor.type], offset=offset))
-        print(f'Index Offset = {indexOffset}')
+            offset = accessor.byteOffset + bufferView.byteOffset
+            V.extend(np.frombuffer(data, dtype=M_dtype[accessor.componentType], count=accessor.count * M_num_components[accessor.type], offset=offset))
+            print(f'Index Offset = {indexOffset}')
 
-        accessor = gltf.accessors[primitive.indices]
-        bufferView = gltf.bufferViews[accessor.bufferView]
-        buffer = gltf.buffers[bufferView.buffer]
-        data = gltf.get_data_from_buffer_uri(buffer.uri)
+            accessor = gltf.accessors[primitive.indices]
+            bufferView = gltf.bufferViews[accessor.bufferView]
+            buffer = gltf.buffers[bufferView.buffer]
+            data = gltf.get_data_from_buffer_uri(buffer.uri)
 
-        # Get the binary data for this mesh primitive from the buffer
-        offset = accessor.byteOffset + bufferView.byteOffset
-        I.extend(np.frombuffer(data, dtype=M_dtype[accessor.componentType], count=accessor.count * M_num_components[accessor.type], offset=offset))
-        for i in range(accessor.count):
-            I[i + lastIndex] += indexOffset
-        indexOffset = int(len(V) / 3)
-        lastIndex = len(I)
+            # Get the binary data for this mesh primitive from the buffer
+            offset = accessor.byteOffset + bufferView.byteOffset
+            I.extend(np.frombuffer(data, dtype=M_dtype[accessor.componentType], count=accessor.count * M_num_components[accessor.type], offset=offset))
+            for i in range(accessor.count):
+                I[i + lastIndex] += indexOffset
+            indexOffset = int(len(V) / 3)
+            lastIndex = len(I)
 
-        print(f'accessor.count = {accessor.count}')
+            print(f'accessor.count = {accessor.count}')
 
+    print(f"Materials Len: {len(gltf.materials)}")
+    print(f'Primitives Count: {primitivesCount}')
     print(f'Vertices Count: {int(len(V) / 3)}')
     print(f'Indices Count: {len(I)}')
 
@@ -85,35 +89,32 @@ class Mesh:
 
     def loadGLB(self, path: str):
         self.gltf = GLTF2().load(path)
+        if self.gltf == None:
+            raise RuntimeError(f"Failed to load {path}")
 
-        mesh = self.gltf.meshes[0]
-        vertices, indices, normals, uvs = load_vertices(self.gltf, mesh)
+        vertices, indices, normals, uvs = load_vertices(self.gltf)
 
-        vertex_count = len(vertices) // 3
+        self.vbos = glBuffers(4)
 
-        # Reshape individual arrays to Nx3 or Nx2
-        V_reshaped = vertices.reshape(vertex_count, 3)
-        N_reshaped = normals.reshape(vertex_count, 3)
-        UV_reshaped = uvs.reshape(vertex_count, 2)
-
-        interleaved = np.hstack((V_reshaped, N_reshaped, UV_reshaped)).astype(np.float32)
-
-        print(mesh.primitives[0].attributes)
-
-        stride = 8 * 4
         self.vao = glGenVertexArrays(1)
         glBindVertexArray(self.vao)
 
-        self.vbo = glVertexBuffer(interleaved, interleaved.nbytes, GL_STATIC_DRAW)
+        self.vbos.setVertexBuffer(1, vertices, vertices.nbytes, GL_STATIC_DRAW)
         glEnableVertexAttribArray(0)
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, stride, ctypes.c_void_p(0))
-        glEnableVertexAttribArray(1)
-        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, stride, ctypes.c_void_p(12))
-        glEnableVertexAttribArray(2)
-        glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, stride, ctypes.c_void_p(24))
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, ctypes.c_void_p(0))
 
-        self.ibo = glIndexBuffer(indices, indices.size);
+        self.vbos.setVertexBuffer(2, normals, normals.nbytes, GL_STATIC_DRAW)
+        glEnableVertexAttribArray(1)
+        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, ctypes.c_void_p(0))
+
+        self.vbos.setVertexBuffer(3, uvs, uvs.nbytes, GL_STATIC_DRAW)
+        glEnableVertexAttribArray(2)
+        glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 0, ctypes.c_void_p(0))
+
+        self.vbos.setIndexBuffer(0, indices, indices.size, GL_STATIC_DRAW)
 
         glBindVertexArray(0)
-        self.vbo.unbind()
-        self.ibo.unbind()
+
+    def delete(self):
+        self.vbos.delete()
+        glDeleteVertexArrays(1, [self.vao])

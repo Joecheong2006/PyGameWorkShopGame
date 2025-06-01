@@ -3,6 +3,36 @@ from OpenGL.GL import *
 import numpy as np
 from PIL import Image
 
+class glBufferStatus:
+    def __init__(self, size: int, usage: int):
+        self.size = size
+        self.usage = usage
+
+class glBuffers:
+    def __init__(self, buffersCount: int):
+        self._bufs = glGenBuffers(buffersCount)
+        self.bufsStatus = [glBufferStatus(0, 0)] * buffersCount * 2
+        self.count = buffersCount
+
+    def bindVertexBuffer(self, bufferIndex: int):
+        glBindBuffer(GL_ARRAY_BUFFER, self._bufs[bufferIndex])
+
+    def setVertexBuffer(self, bufferIndex: int, data, size: int, usage: int):
+        self.bindVertexBuffer(bufferIndex)
+        glBufferData(GL_ARRAY_BUFFER, size, data, usage)
+        self.bufsStatus[bufferIndex] = glBufferStatus(size, usage)
+
+    def bindIndexBuffer(self, bufferIndex: int):
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, self._bufs[bufferIndex]);
+
+    def setIndexBuffer(self, bufferIndex: int, data, count: int, usage: int) -> None:
+        self.bindIndexBuffer(bufferIndex)
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, 4 * count, data, usage);
+        self.bufsStatus[bufferIndex] = glBufferStatus(4 * count, usage)
+
+    def delete(self):
+        glDeleteBuffers(self.count, self._bufs)
+
 class glVertexBuffer:
     def __init__(self, data, size: int, usage: int):
         self._id = glGenBuffers(1)
@@ -15,7 +45,7 @@ class glVertexBuffer:
     def unbind(self) -> None:
         glBindBuffer(GL_ARRAY_BUFFER, 0)
 
-    def setBuffer(self, data, size) -> None:
+    def setBuffer(self, data, size: int) -> None:
         self.bind();
 
         glBufferData(GL_ARRAY_BUFFER, size, data, self.usage)
@@ -37,7 +67,7 @@ class glIndexBuffer:
     def unbind(self) -> None:
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 
-    def setBuffer(self, data, count) -> None:
+    def setBuffer(self, data, count: int) -> None:
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, self._id);
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, 4 * count, data, GL_STATIC_DRAW);
 

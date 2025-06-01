@@ -6,8 +6,6 @@ from Mesh import Mesh
 from RenderPipeline import PostProcessingPass
 from Camera import *
 
-import numpy as np
-
 quad_vertex_src = """
 #version 330 core
 
@@ -38,17 +36,6 @@ void main()
     frag_color = vec4(color, 1.0);
 }
 """
-
-quad_vertices = np.array([
-    # positions    # texCoords
-    -1.0,  1.0,     0.0, 1.0,
-    -1.0, -1.0,     0.0, 0.0,
-     1.0, -1.0,     1.0, 0.0,
-
-    -1.0,  1.0,     0.0, 1.0,
-     1.0, -1.0,     1.0, 0.0,
-     1.0,  1.0,     1.0, 1.0
-], dtype=np.float32)
 
 class Game(Application):
     def __init__(self):
@@ -133,7 +120,7 @@ class Game(Application):
             )
 
         self.mesh = Mesh()
-        self.mesh.loadGLB("res/Monkey.glb")
+        self.mesh.loadGLB("res/Idle.glb")
         # self.mesh.loadGLB("res/Cube.glb")
         # self.mesh.loadGLB("res/GEKKOU_lowpoly.glb")
 
@@ -162,6 +149,7 @@ class Game(Application):
     def onWindowClose(self):
         self.renderer.delete()
         self.postProcessingPass.delete()
+        self.mesh.delete()
         print('Close from Game')
 
     def onUpdate(self):
@@ -181,7 +169,7 @@ class Game(Application):
         glBindVertexArray(self.mesh.vao)
         glUniformMatrix4fv(glGetUniformLocation(self.shader.program, "m"), 1, GL_FALSE, m.to_list())
         glUniform1f(glGetUniformLocation(self.shader.program, "t"), t)
-        glDrawElements(GL_TRIANGLES, self.mesh.ibo.count, GL_UNSIGNED_INT, None)
+        glDrawElements(GL_TRIANGLES, int(self.mesh.vbos.bufsStatus[0].size / 4), GL_UNSIGNED_INT, None)
 
         # r = 4
         # for i in range(r):
