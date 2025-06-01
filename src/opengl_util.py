@@ -9,19 +9,20 @@ class glVertexBuffer:
         self.usage = usage
         self.setBuffer(data, size)
 
-    def bind(self):
+    def bind(self) -> None:
         glBindBuffer(GL_ARRAY_BUFFER, self._id)
 
-    def unbind(self):
+    def unbind(self) -> None:
         glBindBuffer(GL_ARRAY_BUFFER, 0)
 
-    def setBuffer(self, data, size):
+    def setBuffer(self, data, size) -> None:
         self.bind();
+
         glBufferData(GL_ARRAY_BUFFER, size, data, self.usage)
         self.size = size
         self.data = data
 
-    def delete(self):
+    def delete(self) -> None:
         glDeleteBuffers(1, [self._id])
 
 class glIndexBuffer:
@@ -30,39 +31,46 @@ class glIndexBuffer:
         self.count = count
         self.setBuffer(data, count)
 
-    def bind(self):
+    def bind(self) -> None:
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, self._id);
 
-    def unbind(self):
+    def unbind(self) -> None:
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 
-    def setBuffer(self, data, count):
+    def setBuffer(self, data, count) -> None:
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, self._id);
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, 4 * count, data, GL_STATIC_DRAW);
 
-    def delete(self):
+    def delete(self) -> None:
         glDeleteBuffers(1, [self._id])
 
-def compile_shader(src: str, type: int):
+def compile_shader(src: str, type: int) -> int:
     shader = glCreateShader(type)
+    if shader is None:
+        raise RuntimeError("Failed to create shader")
+
     glShaderSource(shader, src)
     glCompileShader(shader)
     if glGetShaderiv(shader, GL_COMPILE_STATUS) != GL_TRUE:
         raise RuntimeError(glGetShaderInfoLog(shader).decode())
-    return shader
+    return int(shader)
 
-def create_program(vs_src: str, fs_src: str):
+def create_program(vs_src: str, fs_src: str) -> int:
     vs = compile_shader(vs_src, GL_VERTEX_SHADER)
     fs = compile_shader(fs_src, GL_FRAGMENT_SHADER)
-    prog = glCreateProgram()
-    glAttachShader(prog, vs)
-    glAttachShader(prog, fs)
-    glLinkProgram(prog)
-    if glGetProgramiv(prog, GL_LINK_STATUS) != GL_TRUE:
-        raise RuntimeError(glGetProgramInfoLog(prog).decode())
+    program = glCreateProgram()
+    if program is None:
+        raise RuntimeError("Failed to create program")
+
+    glAttachShader(program, vs)
+    glAttachShader(program, fs)
+    glLinkProgram(program)
+    if glGetProgramiv(program, GL_LINK_STATUS) != GL_TRUE:
+        raise RuntimeError(glGetProgramInfoLog(program).decode())
+
     glDeleteShader(vs)
     glDeleteShader(fs)
-    return prog
+    return int(program)
 
 class glShaderProgram:
     def __init__(self, vertex_src: str, fragment_src: str):
@@ -70,13 +78,13 @@ class glShaderProgram:
         self.fragment_src =fragment_src 
         self.program = create_program(vertex_src, fragment_src);
 
-    def bind(self):
+    def bind(self) -> None:
         glUseProgram(self.program)
 
-    def unbind(self):
+    def unbind(self) -> None:
         glUseProgram(0)
 
-    def delete(self):
+    def delete(self) -> None:
         glDeleteProgram(self.program);
 
 class glTexture:
@@ -108,14 +116,14 @@ class glTexture:
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE)
 
-    def bind(self, slot: int = 0):
+    def bind(self, slot: int = 0) -> None:
         glActiveTexture(int(GL_TEXTURE0) + slot)
         glBindTexture(GL_TEXTURE_2D, self._id)
 
-    def unbind(self):
+    def unbind(self) -> None:
         glBindTexture(GL_TEXTURE_2D, 0)
 
-    def delete(self):
+    def delete(self) -> None:
         glDeleteTextures(1, [self._id])
 
 class glFramebuffer:
@@ -142,20 +150,29 @@ class glFramebuffer:
         glEnableVertexAttribArray(0)
         glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * self.quad_vertices.itemsize, ctypes.c_void_p(8))
         glEnableVertexAttribArray(1)
-        self.fbo = glGenFramebuffers(1)
 
-    def attachTexture(self, texture: glTexture):
+        self.fbo = glGenFramebuffers(1)
+        self.rbo = glGenRenderbuffers(1);
+        glBindRenderbuffer(GL_RENDERBUFFER, self.rbo); 
+        glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, screenBufferSize[0], screenBufferSize[1]);
+        glBindRenderbuffer(GL_RENDERBUFFER, 0);
+
+    def attachTexture(self, texture: glTexture) -> None:
         self.bind()
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texture._id, 0)
+        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, self.rbo)
         self.unbind()
 
-    def bind(self):
+    def isCompleted(self) -> bool:
+        return glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE
+
+    def bind(self) -> None:
         glBindFramebuffer(GL_FRAMEBUFFER, self.fbo)
 
-    def unbind(self):
+    def unbind(self) -> None:
         glBindFramebuffer(GL_FRAMEBUFFER, 0)
 
-    def delete(self):
+    def delete(self) -> None:
         self.shader.delete()
         glDeleteVertexArrays(1, [self.quad_vao])
         glDeleteBuffers(1, [self.quad_vbo])

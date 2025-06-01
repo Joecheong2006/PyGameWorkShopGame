@@ -14,7 +14,7 @@ class QuadRenderer:
         self.window = window
 
         self.vao = glGenVertexArrays(1)
-        self.vbo = glVertexBuffer(None, 0, GL_DYNAMIC_DRAW);
+        self.vbo = glVertexBuffer(None, 0, GL_DYNAMIC_DRAW)
 
         glBindVertexArray(self.vao)
 
