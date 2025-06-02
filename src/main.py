@@ -8,8 +8,10 @@ from Camera import *
 
 class Game(Application):
     def __init__(self):
-        scale = (4, 4)
-        PIXEL_WIDTH, PIXEL_HEIGHT = 320, 180
+        # scale = (4, 4)
+        # PIXEL_WIDTH, PIXEL_HEIGHT = 320, 180
+        scale = (1, 1)
+        PIXEL_WIDTH, PIXEL_HEIGHT = 320 * 4, 180 * 4
         WINDOW_SIZE = (PIXEL_WIDTH * scale[0], PIXEL_HEIGHT * scale[1])
 
         super().__init__(WINDOW_SIZE)

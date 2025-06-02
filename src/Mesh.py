@@ -208,4 +208,3 @@ class Mesh:
                 glUniform1i(glGetUniformLocation(shader.program, "diffuseTexture"), 0)
 
             glDrawElementsBaseVertex(GL_TRIANGLES, entry.indexCount, GL_UNSIGNED_INT, ctypes.c_void_p(4 * entry.indexOffset), entry.vertexOffset)
-        glBindVertexArray(0)
