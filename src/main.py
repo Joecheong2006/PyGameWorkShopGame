@@ -6,37 +6,6 @@ from Mesh import Mesh
 from RenderPipeline import PostProcessingPass
 from Camera import *
 
-quad_vertex_src = """
-#version 330 core
-
-layout(location = 0) in vec3 position;
-layout(location = 1) in vec2 texCoord;
-
-uniform mat4 m;
-
-out vec2 uv; 
-
-void main()
-{
-    gl_Position = m * vec4(position, 1);
-    uv = texCoord;
-}
-"""
-
-quad_fragment_src = """
-#version 330 core
-
-layout(location = 0) out vec4 frag_color;
-in vec2 uv;
-uniform sampler2D screenTexture;
-
-void main()
-{
-    vec3 color = texture(screenTexture, uv).rgb;
-    frag_color = vec4(color, 1.0);
-}
-"""
-
 class Game(Application):
     def __init__(self):
         scale = (4, 4)
@@ -46,7 +15,8 @@ class Game(Application):
         super().__init__(WINDOW_SIZE)
 
         glEnable(GL_DEPTH_TEST)
-        glDepthFunc(GL_LESS)
+        glEnable(GL_BLEND)
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
 
         postProcessingShader = glShaderProgram(
                 """
@@ -75,11 +45,39 @@ class Game(Application):
         self.postProcessingPass = PostProcessingPass(postProcessingShader, GL_NEAREST, (PIXEL_WIDTH, PIXEL_HEIGHT))
 
         self.renderer = QuadRenderer(self.window)
-        self.quad_shader = glShaderProgram(quad_vertex_src, quad_fragment_src)
+        self.quad_shader = glShaderProgram(
+                """
+                #version 330 core
 
-        self.wallpaper = glTexture.loadTexture('res/wallpaper.jpg', GL_NEAREST)
+                layout(location = 0) in vec3 position;
+                layout(location = 1) in vec2 texCoord;
 
-        self.cam = Camera(glm.vec3(0.0, 0.0, 1.0), glm.radians(90), self.window.width / self.window.height, 0.1, 100)
+                uniform mat4 m;
+
+                out vec2 uv; 
+
+                void main()
+                {
+                    gl_Position = m * vec4(position, 1);
+                    uv = texCoord;
+                }
+                """,
+                """
+                #version 330 core
+
+                layout(location = 0) out vec4 frag_color;
+                in vec2 uv;
+                uniform sampler2D screenTexture;
+
+                void main()
+                {
+                    vec4 color = texture(screenTexture, uv);
+                    frag_color = color;
+                }
+                """)
+        self.wallpaper = glTexture.loadTexture('res/GreenGrass.png', GL_NEAREST)
+
+        self.cam = Camera(glm.vec3(0.0, 0.0, 1.0), glm.radians(45), self.window.width / self.window.height, 0.1, 100)
         self.cam.lookAt(self.cam.position + glm.vec3(0, 0, -1))
 
         self.shader = glShaderProgram(
@@ -115,25 +113,36 @@ class Game(Application):
             in vec3 normal;
             in vec2 uv;
 
+            #define TOON_LEVEL 6.0
+
             void main() {
-                vec3 lightPos = vec3(sin(t), -0.4, -cos(t));
-                float fractor = max(dot(normalize(normal), -normalize(lightPos)), 0);
+                float R = 2;
+                vec3 lightPos = vec3(R * sin(t), 1, R * cos(t));
+                float factor = dot(normalize(normal), normalize(lightPos));
+
+                if (factor > 0) {
+                    factor = ceil(factor * TOON_LEVEL) / TOON_LEVEL;
+                }
+                else {
+                    factor = 0;
+                }
+
                 if (!hasDiffuseTex) {
-                    FragColor = vec4(color * fractor, 1);
+                    FragColor = vec4(color * factor, 1);
                     return;
                 }
-                FragColor = vec4(texture(diffuseTexture, uv).rgb * fractor, 1);
+                FragColor = vec4(texture(diffuseTexture, uv).rgb * factor, 1);
             }
             """
             )
 
         self.mesh = Mesh()
-        # self.mesh.loadGLB("res/Monkey.glb")
-        self.mesh.loadGLB("res/AlienSoldier.glb")
-        # self.mesh.loadGLB("res/GEKKOU_lowpoly.glb")
-        # self.mesh.loadGLB("res/DRIZZLE.glb")
+        self.mesh.loadGLB("res/Dragon.glb")
+        # self.mesh.loadGLB("res/AlienSoldier.glb")
+        # self.mesh.loadGLB("res/Ronin.glb")
 
         glClearColor(0.1, 0.1, 0.1, 1)
+
         pg.mouse.set_visible(False)
 
     def onWindowKeyAction(self, key: int, mod: int, unicode: int, scancode: int):
@@ -178,27 +187,16 @@ class Game(Application):
         glUniformMatrix4fv(glGetUniformLocation(self.shader.program, "m"), 1, GL_FALSE, m.to_list())
         glUniform1f(glGetUniformLocation(self.shader.program, "t"), t)
         self.mesh.render(self.shader)
+        self.shader.unbind()
 
-        # r = 4
-        # for i in range(r):
-        #     for j in range(r):
-        #         q = Quad((2.0 / r, 2.0 / r * ratio), (2.0 * i / r - 1.0 + 1.0 / r, 2.0 * j / r - 1.0 + 1.0 / r), t)
-        #         self.renderer.drawQuad(q)
-        #         if self.renderer.full:
-        #             self.quad_shader.bind()
-        #             self.renderer.submit()
-        #             self.wallpaper.bind(0)
-        #             glUniform1i(glGetUniformLocation(self.quad_shader.program, "screenTexture"), 0)
-        #             glUniformMatrix4fv(glGetUniformLocation(self.quad_shader.program, "m"), 1, GL_FALSE, m.to_list())
-        #             self.renderer.clearBuffer()
-        #             self.renderer.drawQuad(q)
-        #
-        # if self.renderer.vbIndex > 0:
-        #     self.quad_shader.bind()
-        #     self.wallpaper.bind(0)
-        #     glUniform1i(glGetUniformLocation(self.quad_shader.program, "screenTexture"), 0)
-        #     glUniformMatrix4fv(glGetUniformLocation(self.quad_shader.program, "m"), 1, GL_FALSE, m.to_list())
-        #     self.renderer.submit()
+        # ratio = self.wallpaper.height / self.wallpaper.width
+        # q = Quad((0.4, 0.4 * ratio), (0, 0), t)
+        # self.quad_shader.bind()
+        # self.wallpaper.bind(0)
+        # glUniform1i(glGetUniformLocation(self.quad_shader.program, "screenTexture"), 0)
+        # glUniformMatrix4fv(glGetUniformLocation(self.quad_shader.program, "m"), 1, GL_FALSE, m.to_list())
+        # self.renderer.drawQuad(q)
+        # self.renderer.submit()
 
         # Render fullscreen quad with post-processing
         glViewport(0, 0, self.window.width, self.window.height)
@@ -219,6 +217,7 @@ class Game(Application):
             dir += glm.vec3(0, 1, 0)
         if dir != glm.vec3(0):
             self.cam.position += glm.normalize(dir) / self.window.fps
+            self.cam.lookAt(self.cam.position + self.cam.forward)
 
 def main() -> None:
     app = Game()
