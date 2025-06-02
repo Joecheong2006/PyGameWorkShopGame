@@ -27,8 +27,10 @@ def init_materials(gltf, layout):
         if entry.materialIndex == None:
             materials.append(m)
             continue
+        print(gltf.materials[entry.materialIndex])
         texture = gltf.materials[entry.materialIndex].pbrMetallicRoughness.baseColorTexture
         color = gltf.materials[entry.materialIndex].pbrMetallicRoughness.baseColorFactor
+        emissiveColor = gltf.materials[entry.materialIndex].emissiveFactor
         if color:
             m.baseColor = color[0:3]
         if texture:
@@ -89,13 +91,14 @@ def load_vertices(gltf):
             N.extend(np.frombuffer(data, dtype=M_dtype[accessor.componentType], count=accessor.count * M_num_components[accessor.type], offset=offset))
 
             # Get the binary data for this mesh primitive from the buffer
-            accessor = gltf.accessors[primitive.attributes.TEXCOORD_0]
-            bufferView = gltf.bufferViews[accessor.bufferView]
-            buffer = gltf.buffers[bufferView.buffer]
-            data = gltf.get_data_from_buffer_uri(buffer.uri)
+            if primitive.attributes.TEXCOORD_0:
+                accessor = gltf.accessors[primitive.attributes.TEXCOORD_0]
+                bufferView = gltf.bufferViews[accessor.bufferView]
+                buffer = gltf.buffers[bufferView.buffer]
+                data = gltf.get_data_from_buffer_uri(buffer.uri)
 
-            offset = accessor.byteOffset + bufferView.byteOffset
-            UV.extend(np.frombuffer(data, dtype=M_dtype[accessor.componentType], count=accessor.count * M_num_components[accessor.type], offset=offset))
+                offset = accessor.byteOffset + bufferView.byteOffset
+                UV.extend(np.frombuffer(data, dtype=M_dtype[accessor.componentType], count=accessor.count * M_num_components[accessor.type], offset=offset))
 
             # Get the binary data for this mesh primitive from the buffer
             accessor = gltf.accessors[primitive.attributes.POSITION]
@@ -174,9 +177,10 @@ class Mesh:
         glEnableVertexAttribArray(1)
         glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, ctypes.c_void_p(0))
 
-        self.vbos.setVertexBuffer(3, uvs, uvs.nbytes, GL_STATIC_DRAW)
-        glEnableVertexAttribArray(2)
-        glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 0, ctypes.c_void_p(0))
+        if len(uvs) > 0:
+            self.vbos.setVertexBuffer(3, uvs, uvs.nbytes, GL_STATIC_DRAW)
+            glEnableVertexAttribArray(2)
+            glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 0, ctypes.c_void_p(0))
 
         self.vbos.setIndexBuffer(0, indices, indices.size, GL_STATIC_DRAW)
 
@@ -204,3 +208,4 @@ class Mesh:
                 glUniform1i(glGetUniformLocation(shader.program, "diffuseTexture"), 0)
 
             glDrawElementsBaseVertex(GL_TRIANGLES, entry.indexCount, GL_UNSIGNED_INT, ctypes.c_void_p(4 * entry.indexOffset), entry.vertexOffset)
+        glBindVertexArray(0)
