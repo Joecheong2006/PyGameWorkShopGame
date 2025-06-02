@@ -90,13 +90,15 @@ class Game(Application):
             layout (location = 2) in vec2 aUV;
 
             uniform mat4 m;
+            uniform mat4 model;
+            uniform mat4 mn;
 
             out vec3 normal;
             out vec2 uv;
 
             void main() {
-                gl_Position = m * vec4(aPos, 1.0);
-                normal = aNormal;
+                gl_Position = m * model * vec4(aPos, 1.0);
+                normal = (mn * vec4(aNormal, 1.0)).xyz;
                 uv = aUV;
             }
             """,
@@ -106,23 +108,30 @@ class Game(Application):
             out vec4 FragColor;
 
             uniform float t;
+            uniform vec3 color;
+            uniform sampler2D diffuseTexture;
+            uniform bool hasDiffuseTex;
 
             in vec3 normal;
             in vec2 uv;
 
             void main() {
-                float fractor = dot(normalize(normal), vec3(cos(t), 0.2, sin(t)));
-                vec3 color = vec3(max(fractor, 0));
-                // FragColor = vec4(1, uv, 1);
-                FragColor = vec4(color, 1);
+                vec3 lightPos = vec3(sin(t), -0.4, -cos(t));
+                float fractor = max(dot(normalize(normal), -normalize(lightPos)), 0);
+                if (!hasDiffuseTex) {
+                    FragColor = vec4(color * fractor, 1);
+                    return;
+                }
+                FragColor = vec4(texture(diffuseTexture, uv).rgb * fractor, 1);
             }
             """
             )
 
         self.mesh = Mesh()
-        self.mesh.loadGLB("res/Idle.glb")
-        # self.mesh.loadGLB("res/Cube.glb")
+        # self.mesh.loadGLB("res/Monkey.glb")
+        self.mesh.loadGLB("res/AlienSoldier.glb")
         # self.mesh.loadGLB("res/GEKKOU_lowpoly.glb")
+        # self.mesh.loadGLB("res/DRIZZLE.glb")
 
         glClearColor(0.1, 0.1, 0.1, 1)
         pg.mouse.set_visible(False)
@@ -166,10 +175,9 @@ class Game(Application):
         m = self.cam.projectionMat * self.cam.viewMat
 
         self.shader.bind()
-        glBindVertexArray(self.mesh.vao)
         glUniformMatrix4fv(glGetUniformLocation(self.shader.program, "m"), 1, GL_FALSE, m.to_list())
         glUniform1f(glGetUniformLocation(self.shader.program, "t"), t)
-        glDrawElements(GL_TRIANGLES, int(self.mesh.vbos.bufsStatus[0].size / 4), GL_UNSIGNED_INT, None)
+        self.mesh.render(self.shader)
 
         # r = 4
         # for i in range(r):
