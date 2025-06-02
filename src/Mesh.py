@@ -156,9 +156,9 @@ class Mesh:
                 continue
             print(node)
             print(node.mesh)
-            T = glm.translate(glm.mat4(1.0), glm.vec3(*node.translation)) if node.translation else glm.mat4(1.0)
-            R = glm.mat4_cast(glm.quat(*node.rotation)) if node.rotation else glm.mat4(1.0)
-            S = glm.scale(glm.mat4(1.0), glm.vec3(*node.scale)) if node.scale else glm.mat4(1.0)
+            T = glm.translate(glm.mat4(1.0), glm.vec3(node.translation)) if node.translation else glm.mat4(1.0)
+            R = glm.mat4_cast(glm.quat(node.rotation[3], node.rotation[0], node.rotation[1], node.rotation[2])) if node.rotation else glm.mat4(1.0)
+            S = glm.scale(glm.mat4(1.0), glm.vec3(node.scale)) if node.scale else glm.mat4(1.0)
             self.modelMats[node.mesh] = glm.mat4(T * R * S)
             self.normalMats[node.mesh] = R
 
