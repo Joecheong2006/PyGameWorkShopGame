@@ -12,7 +12,7 @@ class Camera:
 
         self.up = glm.vec3(0, 1, 0)
         self.right = glm.vec3(1, 0, 0)
-        self.forward = glm.vec3(0, 0, 1)
+        self.forward = glm.vec3(0, 0, -1)
 
         self.viewMat = glm.mat4(1.0)
         self.projectionMat = glm.mat4(1.0)
