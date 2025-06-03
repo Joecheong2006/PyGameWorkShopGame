@@ -6,7 +6,7 @@ class WindowEventHandler:
     def __init__(self):
         self.windowClose: Callable[[], None] = lambda : None
         self.windowInitialize: Callable[[], None] = lambda : None
-        self.windowKeyAction: Callable[[int, int, int, int], None] = lambda key, mod, unicode, scancode : None
+        self.windowKeyAction: Callable[[int, int, int, int, int], None] = lambda key, type, mod, unicode, scancode : None
         self.windowCursor: Callable[[], None] = lambda : None
         self.windowMouseMotion: Callable[[tuple[int, int], tuple[int, int], tuple[bool, bool, bool], bool], None] = lambda pos, rel, button, touch: None
         self.windowMouseButton: Callable[[tuple[int, int], int, bool], None] = lambda pos, button, touch: None
@@ -42,7 +42,7 @@ class Window:
             if event.type == pg.QUIT:
                 self.isRunning = False
             elif event.type == pg.KEYDOWN or event.type == pg.KEYUP:
-                handler.windowKeyAction(event.key, event.mod, event.unicode, event.scancode)
+                handler.windowKeyAction(event.key, event.type, event.mod, event.unicode, event.scancode)
             elif event.type == pg.MOUSEBUTTONUP or event.type == pg.MOUSEBUTTONDOWN:
                 handler.windowMouseButton(event.pos, event.button, event.touch)
             elif event.type == pg.MOUSEMOTION:
