@@ -52,6 +52,8 @@ def load_vertices(gltf):
     I = []
     N = []
     UV = []
+    BID = []
+    W = []
 
     lastIndex = 0
 
@@ -61,13 +63,18 @@ def load_vertices(gltf):
         "VEC2": 2,
         "VEC3": 3,
         "VEC4": 4,
-        "MAT4": 16
+        "MAT2": 4,
+        "MAT3": 9,
+        "MAT4": 16,
     }
 
     M_dtype = {
-        5126: np.float32,
+        5120: np.int8,
+        5121: np.uint8,
+        5122: np.int16,
         5123: np.uint16,
         5125: np.uint32,
+        5126: np.float32,
     }
 
     primitivesLayout: list[PrimitiveEntry] = []
@@ -87,7 +94,7 @@ def load_vertices(gltf):
             buffer = gltf.buffers[bufferView.buffer]
             data = gltf.get_data_from_buffer_uri(buffer.uri)
 
-            offset = accessor.byteOffset + bufferView.byteOffset
+            offset = (bufferView.byteOffset or 0) + (accessor.byteOffset or 0)
             N.extend(np.frombuffer(data, dtype=M_dtype[accessor.componentType], count=accessor.count * M_num_components[accessor.type], offset=offset))
 
             # Get the binary data for this mesh primitive from the buffer
@@ -97,7 +104,7 @@ def load_vertices(gltf):
                 buffer = gltf.buffers[bufferView.buffer]
                 data = gltf.get_data_from_buffer_uri(buffer.uri)
 
-                offset = accessor.byteOffset + bufferView.byteOffset
+                offset = (bufferView.byteOffset or 0) + (accessor.byteOffset or 0)
                 UV.extend(np.frombuffer(data, dtype=M_dtype[accessor.componentType], count=accessor.count * M_num_components[accessor.type], offset=offset))
 
             # Get the binary data for this mesh primitive from the buffer
@@ -108,7 +115,7 @@ def load_vertices(gltf):
 
             entry.vertexOffset = int(len(V) / 3)
 
-            offset = accessor.byteOffset + bufferView.byteOffset
+            offset = (bufferView.byteOffset or 0) + (accessor.byteOffset or 0)
             V.extend(np.frombuffer(data, dtype=M_dtype[accessor.componentType], count=accessor.count * M_num_components[accessor.type], offset=offset))
 
             accessor = gltf.accessors[primitive.indices]
@@ -117,7 +124,7 @@ def load_vertices(gltf):
             data = gltf.get_data_from_buffer_uri(buffer.uri)
 
             # Get the binary data for this mesh primitive from the buffer
-            offset = accessor.byteOffset + bufferView.byteOffset
+            offset = (bufferView.byteOffset or 0) + (accessor.byteOffset or 0)
             I.extend(np.frombuffer(data, dtype=M_dtype[accessor.componentType], count=accessor.count * M_num_components[accessor.type], offset=offset))
 
             entry.indexOffset = lastIndex
@@ -129,12 +136,30 @@ def load_vertices(gltf):
             print(f'Entry: indexCount={entry.indexCount}, indexOffset={entry.indexOffset}, vertexOffset={entry.vertexOffset}, materailIndex={entry.materialIndex}')
             primitivesLayout.append(entry)
 
+            if primitive.attributes.JOINTS_0:
+                accessor = gltf.accessors[primitive.attributes.JOINTS_0]
+                bufferView = gltf.bufferViews[accessor.bufferView]
+                buffer = gltf.buffers[bufferView.buffer]
+                data = gltf.get_data_from_buffer_uri(buffer.uri)
+
+                offset = (bufferView.byteOffset or 0) + (accessor.byteOffset or 0)
+                BID.extend(np.frombuffer(data, dtype=M_dtype[accessor.componentType], count=accessor.count * M_num_components[accessor.type], offset=offset))
+
+            if primitive.attributes.WEIGHTS_0:
+                accessor = gltf.accessors[primitive.attributes.WEIGHTS_0]
+                bufferView = gltf.bufferViews[accessor.bufferView]
+                buffer = gltf.buffers[bufferView.buffer]
+                data = gltf.get_data_from_buffer_uri(buffer.uri)
+
+                offset = (bufferView.byteOffset or 0) + (accessor.byteOffset or 0)
+                W.extend(np.frombuffer(data, dtype=M_dtype[accessor.componentType], count=accessor.count * M_num_components[accessor.type], offset=offset))
+
     print(f"Materials Len: {len(gltf.materials)}")
     print(f'Vertices Count: {int(len(V) / 3)}')
     print(f'Indices Count: {len(I)}')
 
     # convert a numpy array for some manipulation
-    return primitivesLayout, np.array(V, dtype=np.float32), np.array(I, dtype=np.uint32), np.array(N, dtype=np.float32), np.array(UV, dtype=np.float32)
+    return primitivesLayout, np.array(V, dtype=np.float32), np.array(I, dtype=np.uint32), np.array(N, dtype=np.float32), np.array(UV, dtype=np.float32), np.array(BID, dtype=np.uint32), np.array(W, dtype=np.float32)
 
 class Mesh:
     def __init__(self):
@@ -146,7 +171,7 @@ class Mesh:
         if self.gltf == None:
             raise RuntimeError(f"Failed to load {path}")
 
-        self.layout, vertices, indices, normals, uvs = load_vertices(self.gltf)
+        self.layout, vertices, indices, normals, uvs, boneIDs, weights = load_vertices(self.gltf)
 
         self.modelMats = [glm.mat4(1)] * len(self.gltf.nodes)
         self.normalMats = [glm.mat4(1)] * len(self.gltf.nodes)
@@ -164,7 +189,7 @@ class Mesh:
 
         self.materials = init_materials(self.gltf, self.layout)
 
-        self.vbos = glBuffers(4)
+        self.vbos = glBuffers(6)
 
         self.vao = glGenVertexArrays(1)
         glBindVertexArray(self.vao)
@@ -181,6 +206,16 @@ class Mesh:
             self.vbos.setVertexBuffer(3, uvs, uvs.nbytes, GL_STATIC_DRAW)
             glEnableVertexAttribArray(2)
             glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 0, ctypes.c_void_p(0))
+
+        if len(boneIDs) > 0:
+            self.vbos.setVertexBuffer(4, boneIDs, boneIDs.nbytes, GL_STATIC_DRAW)
+            glEnableVertexAttribArray(3)
+            glVertexAttribPointer(3, 4, GL_UNSIGNED_INT, GL_FALSE, 0, ctypes.c_void_p(0))
+
+        if len(weights) > 0:
+            self.vbos.setVertexBuffer(5, weights, weights.nbytes, GL_STATIC_DRAW)
+            glEnableVertexAttribArray(4)
+            glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, 0, ctypes.c_void_p(0))
 
         self.vbos.setIndexBuffer(0, indices, indices.size, GL_STATIC_DRAW)
 
