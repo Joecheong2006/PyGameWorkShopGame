@@ -80,7 +80,7 @@ class Game(Application):
         self.wallpaper = glTexture.loadTexture('res/GreenGrass.png', GL_NEAREST)
 
         self.cam = Camera(glm.vec3(0.0, 0.0, 1.0), glm.radians(45), self.window.width / self.window.height, 0.1, 100)
-        self.cam.lookAt(self.cam.position + glm.vec3(0, 0, -1))
+        self.cam.lookAt(self.cam.position + self.cam.forward)
 
         self.shader = glShaderProgram(
             """
@@ -88,18 +88,30 @@ class Game(Application):
             layout (location = 0) in vec3 aPos;
             layout (location = 1) in vec3 aNormal;
             layout (location = 2) in vec2 aUV;
+            layout (location = 3) in uvec4 aJointIDs;
+            layout (location = 4) in vec4 aWeights;
 
             uniform mat4 m;
             uniform mat4 model;
             uniform mat4 mn;
 
+            uniform mat4 jointMatrices[100];
+
+            out vec3 fragPos;
             out vec3 normal;
             out vec2 uv;
 
+            out vec4 weights;
+            flat out uvec4 boneIDs;
+
             void main() {
                 gl_Position = m * model * vec4(aPos, 1.0);
+                fragPos = vec3(model * vec4(aPos, 1.0));
                 normal = (mn * vec4(aNormal, 1.0)).xyz;
                 uv = aUV;
+
+                weights = aWeights;
+                boneIDs = aJointIDs;
             }
             """,
             """
@@ -112,15 +124,47 @@ class Game(Application):
             uniform sampler2D diffuseTexture;
             uniform bool hasDiffuseTex;
 
+            in vec3 fragPos;
             in vec3 normal;
             in vec2 uv;
 
-            #define TOON_LEVEL 6.0
+            in vec4 weights;
+            flat in uvec4 boneIDs;
+
+            #define TOON_LEVEL 10.0
 
             void main() {
+                bool found = false;
+                for (int i = 0; i < 4; ++i) {
+                    if (boneIDs[i] == uint(t) && weights[i] >= 0.1) {
+                        vec3 color = vec3(1);
+                        if (weights[i] >= 0.7) {
+                            color = vec3(1, 0, 0) * weights[i];
+                        }
+                        else if (weights[i] >= 0.4) {
+                            color = vec3(0, 1, 0) * weights[i];
+                        }
+                        else if (weights[i] >= 0.1) {
+                            color = vec3(0, 0, 1) * weights[i];
+                        }
+                        FragColor = vec4(color, 1);
+                        found = true;
+                        break;
+                    }
+                }
+
+                if (found)
+                    return;
+
+                vec3 N = normalize(normal);
+                if (!gl_FrontFacing) {
+                    N = -N;
+                }
+
                 float R = 2;
-                vec3 lightPos = vec3(R * sin(t), 1, R * cos(t));
-                float factor = dot(normalize(normal), normalize(lightPos));
+                vec3 lightPos = vec3(R * sin(t), 2, R * cos(t));
+                vec3 lightDir = normalize(lightPos - fragPos);
+                float factor = dot(N, lightDir);
 
                 if (factor > 0) {
                     factor = ceil(factor * TOON_LEVEL) / TOON_LEVEL;
@@ -139,16 +183,25 @@ class Game(Application):
             )
 
         self.mesh = Mesh()
-        self.mesh.loadGLB("res/Dragon.glb")
+        # self.mesh.loadGLB("res/SportsCar.glb")
+        # self.mesh.loadGLB("res/Dragon.glb")
         # self.mesh.loadGLB("res/AlienSoldier.glb")
-        # self.mesh.loadGLB("res/Ronin.glb")
+        # self.mesh.loadGLB("res/Idle.glb")
+        self.mesh.loadGLB("res/Ronin.glb")
 
         glClearColor(0.1, 0.1, 0.1, 1)
 
-        pg.mouse.set_visible(False)
+        self.lockCursor = True
+        pg.event.set_grab(self.lockCursor)
+        pg.mouse.set_visible(not self.lockCursor)
+        pg.mouse.set_pos((self.window.width / 2, self.window.height / 2))
+        pg.mouse.get_rel()
 
-    def onWindowKeyAction(self, key: int, mod: int, unicode: int, scancode: int):
-        pass
+    def onWindowKeyAction(self, key: int, type: int, mod: int, unicode: int, scancode: int):
+        if key == pg.K_ESCAPE and type == pg.KEYDOWN:
+            self.lockCursor = not self.lockCursor
+            pg.event.set_grab(self.lockCursor)
+            pg.mouse.set_visible(not self.lockCursor)
 
     def onWindowMouseMotion(self, pos: tuple[int, int], rel: tuple[int, int], button: tuple[bool, bool, bool], touch: bool):
         sensitivity = 0.1
@@ -159,11 +212,6 @@ class Game(Application):
             self.cam.rotation.y = -89.0
 
         dx, dy = rel[0], rel[1]
-
-        # Lock cursor to the center of window
-        self.last_mouse_pos = (self.window.width * 0.5, self.window.height * 0.5)
-        pg.mouse.set_pos(self.last_mouse_pos)
-        
         self.cam.rotate(glm.vec3(0, -dy * sensitivity, dx * sensitivity))
 
     def onWindowClose(self):
@@ -185,11 +233,14 @@ class Game(Application):
 
         m = self.cam.projectionMat * self.cam.viewMat
 
+        previous_time = pg.time.get_ticks()
         self.shader.bind()
         glUniformMatrix4fv(glGetUniformLocation(self.shader.program, "m"), 1, GL_FALSE, m.to_list())
         glUniform1f(glGetUniformLocation(self.shader.program, "t"), t)
         self.mesh.render(self.shader)
         self.shader.unbind()
+        delta_time: float = (pg.time.get_ticks() - previous_time) / 1000.0
+        pg.display.set_caption(f'{delta_time}')
 
         # ratio = self.wallpaper.height / self.wallpaper.width
         # q = Quad((0.4, 0.4 * ratio), (0, 0), t)
@@ -220,6 +271,9 @@ class Game(Application):
         if dir != glm.vec3(0):
             self.cam.position += glm.normalize(dir) / self.window.fps
             self.cam.lookAt(self.cam.position + self.cam.forward)
+        
+        if self.lockCursor:
+            pg.mouse.set_pos((self.window.width / 2, self.window.height / 2))
 
 def main() -> None:
     app = Game()
