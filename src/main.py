@@ -186,8 +186,8 @@ class Game(Application):
         # self.mesh.loadGLB("res/SportsCar.glb")
         # self.mesh.loadGLB("res/Dragon.glb")
         # self.mesh.loadGLB("res/AlienSoldier.glb")
-        # self.mesh.loadGLB("res/Idle.glb")
-        self.mesh.loadGLB("res/Ronin.glb")
+        self.mesh.loadGLB("res/Idle.glb")
+        # self.mesh.loadGLB("res/Ronin.glb")
 
         glClearColor(0.1, 0.1, 0.1, 1)
 

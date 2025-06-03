@@ -159,7 +159,7 @@ def load_vertices(gltf):
     print(f'Indices Count: {len(I)}')
 
     # convert a numpy array for some manipulation
-    return primitivesLayout, np.array(V, dtype=np.float32), np.array(I, dtype=np.uint32), np.array(N, dtype=np.float32), np.array(UV, dtype=np.float32), np.array(BID, dtype=np.uint32), np.array(W, dtype=np.float32)
+    return primitivesLayout, np.array(V, dtype=np.float32), np.array(I, dtype=np.uint32), np.array(N, dtype=np.float32), np.array(UV, dtype=np.float32), np.array(BID), np.array(W, dtype=np.float32)
 
 class Mesh:
     def __init__(self):
@@ -210,7 +210,7 @@ class Mesh:
         if len(boneIDs) > 0:
             self.vbos.setVertexBuffer(4, boneIDs, boneIDs.nbytes, GL_STATIC_DRAW)
             glEnableVertexAttribArray(3)
-            glVertexAttribPointer(3, 4, GL_UNSIGNED_INT, GL_FALSE, 0, ctypes.c_void_p(0))
+            glVertexAttribIPointer(3, 4, GL_UNSIGNED_BYTE, 0, ctypes.c_void_p(0))
 
         if len(weights) > 0:
             self.vbos.setVertexBuffer(5, weights, weights.nbytes, GL_STATIC_DRAW)
