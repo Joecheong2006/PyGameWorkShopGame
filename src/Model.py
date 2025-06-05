@@ -34,7 +34,6 @@ def init_materials(gltf, layout):
         if entry.materialIndex == None:
             materials.append(m)
             continue
-        print(gltf.materials[entry.materialIndex])
         texture = gltf.materials[entry.materialIndex].pbrMetallicRoughness.baseColorTexture
         color = gltf.materials[entry.materialIndex].pbrMetallicRoughness.baseColorFactor
         emissiveColor = gltf.materials[entry.materialIndex].emissiveFactor
@@ -97,7 +96,6 @@ def load_mesh_data(gltf) -> MeshData:
     primitivesLayout: list[PrimitiveEntry] = []
 
     for i, mesh in enumerate(gltf.meshes):
-        print(mesh.name)
         for primitive in mesh.primitives:
             entry = PrimitiveEntry()
             entry.meshIndex = i
@@ -125,10 +123,6 @@ def load_mesh_data(gltf) -> MeshData:
             lastIndex = len(I)
 
             primitivesLayout.append(entry)
-
-    print(f"Materials Len: {len(gltf.materials)}")
-    print(f'Vertices Count: {int(len(V) / 3)}')
-    print(f'Indices Count: {len(I)}')
 
     return MeshData(primitivesLayout, I, V, N, UV, BID, W)
 
@@ -198,8 +192,6 @@ class Model:
         for node in self.nodes:
             if node.mesh == None:
                 continue
-            print(node)
-            print(node.mesh)
             T = glm.mat4()
             R = glm.mat4()
             S = glm.mat4()
