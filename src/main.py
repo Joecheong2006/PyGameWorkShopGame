@@ -78,7 +78,7 @@ class Game(Application):
                     frag_color = color;
                 }
                 """)
-        self.wallpaper = glTexture.loadTexture('res/GreenGrass.png', GL_NEAREST)
+        # self.wallpaper = glTexture.loadTexture('res/GreenGrass.png', GL_NEAREST)
 
         self.cam = Camera(glm.vec3(0.0, 0.0, 1.0), glm.radians(45), self.window.width / self.window.height, 0.1, 100)
         self.cam.lookAt(self.cam.position + self.cam.forward)
@@ -114,9 +114,10 @@ class Game(Application):
                     aWeights.w * jointMatrices[aJointIDs.w];
                 }
 
-                gl_Position = m * model * skinMatrix * vec4(aPos, 1.0);
+                mat4 fullTransform = model * skinMatrix;
+                gl_Position = m * fullTransform * vec4(aPos, 1.0);
                 fragPos = vec3(model * vec4(aPos, 1.0));
-                normal = (mn * transpose(inverse(skinMatrix)) * vec4(aNormal, 1.0)).xyz;
+                normal = normalize(transpose(inverse(mat3(model * skinMatrix))) * aNormal);
                 uv = aUV;
             }
             """,
@@ -137,7 +138,7 @@ class Game(Application):
             #define TOON_LEVEL 10.0
 
             void main() {
-                vec3 N = normalize(normal);
+                vec3 N = normal;
                 if (!gl_FrontFacing) {
                     N = -N;
                 }
@@ -164,12 +165,11 @@ class Game(Application):
             """
             )
 
-        # self.model = Model("res/Kick.glb")
-        # self.model = Model("res/SportsCar.glb")
+        self.model = Model("res/Kick.glb")
+        # self.model = Model("res/Coordinate.glb")
         # self.model.loadGLB("res/Dragon.glb")
         # self.model = Model("res/AlienSoldier.glb")
-        # self.model.loadGLB("res/Idle.glb")
-        self.model = Model("res/Capoeira.glb")
+        # self.model = Model("res/Capoeira.glb")
         # self.model.loadGLB("res/Ronin.glb")
         self.animator = Animator(self.model)
         self.animator.startAnimation(0)
