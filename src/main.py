@@ -94,7 +94,6 @@ class Game(Application):
 
             uniform mat4 m;
             uniform mat4 model;
-            uniform mat4 mn;
 
             uniform mat4 jointMatrices[100];
 

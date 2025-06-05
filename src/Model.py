@@ -178,7 +178,8 @@ def load_animations(gltf):
 
     ordered_node_indexes = order_nodes_root_first(gltf.nodes)
     root = gltf.nodes[ordered_node_indexes[0]]
-    root.rotation = [root.rotation[3], root.rotation[0], root.rotation[1], root.rotation[2]]
+    if root.rotation is not None:
+        root.rotation = [root.rotation[3], root.rotation[0], root.rotation[1], root.rotation[2]]
     return animations, skins, ordered_node_indexes
 
 class Model:
@@ -193,7 +194,6 @@ class Model:
         self.nodes = gltf.nodes
 
         self.modelMats = [glm.mat4(1)] * len(self.nodes)
-        self.normalMats = [glm.mat4(1)] * len(self.nodes)
 
         for node in self.nodes:
             if node.mesh == None:
@@ -203,14 +203,13 @@ class Model:
             T = glm.mat4()
             R = glm.mat4()
             S = glm.mat4()
-            if hasattr(node, 'translation') and node.translation is not None:
+            if node.translation is not None:
                 T = glm.translate(glm.mat4(1.0), glm.vec3(node.translation))
-            if hasattr(node, 'rotation') and node.rotation is not None:
-                R = glm.mat4_cast(glm.quat(node.rotation[3], node.rotation[0], node.rotation[1], node.rotation[2]))
-            if hasattr(node, 'scale') and node.scale is not None:
+            if node.rotation is not None:
+                R = glm.mat4_cast(glm.quat(node.rotation))
+            if node.scale is not None:
                 S = glm.scale(glm.mat4(1.0), glm.vec3(node.scale))
             self.modelMats[node.mesh] = glm.mat4(T * R * S)
-            self.normalMats[node.mesh] = R
 
         self.materials = init_materials(gltf, self.layout)
 
@@ -256,8 +255,6 @@ class Model:
             glUniform3f(glGetUniformLocation(shader.program, "color"), *self.materials[i].baseColor)
             model = self.modelMats[entry.meshIndex]
             glUniformMatrix4fv(glGetUniformLocation(shader.program, "model"), 1, GL_FALSE, model.to_list())
-            mn = self.normalMats[entry.meshIndex]
-            glUniformMatrix4fv(glGetUniformLocation(shader.program, "mn"), 1, GL_FALSE, mn.to_list())
 
             glUniform1i(glGetUniformLocation(shader.program, "hasDiffuseTex"), self.materials[i].hasDiffuseTex)
             if self.materials[i].hasDiffuseTex:
