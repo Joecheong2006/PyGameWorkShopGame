@@ -2,7 +2,8 @@ import pygame as pg
 from Application import *
 from opengl_util import *
 from QuadRenderer import *
-from Mesh import Mesh
+from Model import Model
+from Animator import Animator
 from RenderPipeline import PostProcessingPass
 from Camera import *
 
@@ -97,21 +98,26 @@ class Game(Application):
 
             uniform mat4 jointMatrices[100];
 
+            uniform bool hasAnimation;
+
             out vec3 fragPos;
             out vec3 normal;
             out vec2 uv;
 
-            out vec4 weights;
-            flat out uvec4 boneIDs;
-
             void main() {
-                gl_Position = m * model * vec4(aPos, 1.0);
-                fragPos = vec3(model * vec4(aPos, 1.0));
-                normal = (mn * vec4(aNormal, 1.0)).xyz;
-                uv = aUV;
+                mat4 skinMatrix = mat4(1);
+                if (hasAnimation) {
+                    skinMatrix =
+                    aWeights.x * jointMatrices[aJointIDs.x] +
+                    aWeights.y * jointMatrices[aJointIDs.y] +
+                    aWeights.z * jointMatrices[aJointIDs.z] +
+                    aWeights.w * jointMatrices[aJointIDs.w];
+                }
 
-                weights = aWeights;
-                boneIDs = aJointIDs;
+                gl_Position = m * model * skinMatrix * vec4(aPos, 1.0);
+                fragPos = vec3(model * vec4(aPos, 1.0));
+                normal = (mn * skinMatrix * vec4(aNormal, 1.0)).xyz;
+                uv = aUV;
             }
             """,
             """
@@ -128,41 +134,17 @@ class Game(Application):
             in vec3 normal;
             in vec2 uv;
 
-            in vec4 weights;
-            flat in uvec4 boneIDs;
-
             #define TOON_LEVEL 10.0
 
             void main() {
-                bool found = false;
-                for (int i = 0; i < 4; ++i) {
-                    if (boneIDs[i] == uint(t) && weights[i] >= 0.1) {
-                        vec3 color = vec3(1);
-                        if (weights[i] >= 0.7) {
-                            color = vec3(1, 0, 0) * weights[i];
-                        }
-                        else if (weights[i] >= 0.4) {
-                            color = vec3(0, 1, 0) * weights[i];
-                        }
-                        else if (weights[i] >= 0.1) {
-                            color = vec3(0, 0, 1) * weights[i];
-                        }
-                        FragColor = vec4(color, 1);
-                        found = true;
-                        break;
-                    }
-                }
-
-                if (found)
-                    return;
-
                 vec3 N = normalize(normal);
                 if (!gl_FrontFacing) {
                     N = -N;
                 }
 
                 float R = 2;
-                vec3 lightPos = vec3(R * sin(t), 2, R * cos(t));
+                // vec3 lightPos = vec3(R * sin(t), 2, R * cos(t));
+                vec3 lightPos = vec3(0, 2, 2);
                 vec3 lightDir = normalize(lightPos - fragPos);
                 float factor = dot(N, lightDir);
 
@@ -182,12 +164,15 @@ class Game(Application):
             """
             )
 
-        self.mesh = Mesh()
-        # self.mesh.loadGLB("res/SportsCar.glb")
-        # self.mesh.loadGLB("res/Dragon.glb")
-        # self.mesh.loadGLB("res/AlienSoldier.glb")
-        self.mesh.loadGLB("res/Idle.glb")
-        # self.mesh.loadGLB("res/Ronin.glb")
+        self.model = Model("res/Kick.glb")
+        # self.model = Model("res/SportsCar.glb")
+        # self.model.loadGLB("res/Dragon.glb")
+        # self.model = Model("res/AlienSoldier.glb")
+        # self.model.loadGLB("res/Idle.glb")
+        # self.model.loadGLB("res/Capoeira.glb")
+        # self.model.loadGLB("res/Ronin.glb")
+        self.animator = Animator(self.model)
+        self.animator.startAnimation(0)
 
         glClearColor(0.1, 0.1, 0.1, 1)
 
@@ -217,7 +202,7 @@ class Game(Application):
     def onWindowClose(self):
         self.renderer.delete()
         self.postProcessingPass.delete()
-        self.mesh.delete()
+        self.model.delete()
         print('Close from Game')
 
     def onUpdate(self):
@@ -229,15 +214,19 @@ class Game(Application):
 
         t = pg.time.get_ticks() * 0.001
 
-        ratio = self.wallpaper.height / self.wallpaper.width
-
         m = self.cam.projectionMat * self.cam.viewMat
+
+        self.animator.playAnimation(1.0 / 100)
 
         previous_time = pg.time.get_ticks()
         self.shader.bind()
+        if self.animator.animation:
+            jointMatrices = self.animator.joint_matrices
+            glUniform1i(glGetUniformLocation(self.shader.program, "hasAnimation"), 1)
+            glUniformMatrix4fv(glGetUniformLocation(self.shader.program, "jointMatrices"), len(jointMatrices), GL_TRUE, np.array(jointMatrices))
         glUniformMatrix4fv(glGetUniformLocation(self.shader.program, "m"), 1, GL_FALSE, m.to_list())
         glUniform1f(glGetUniformLocation(self.shader.program, "t"), t)
-        self.mesh.render(self.shader)
+        self.model.render(self.shader)
         self.shader.unbind()
         delta_time: float = (pg.time.get_ticks() - previous_time) / 1000.0
         pg.display.set_caption(f'{delta_time}')
