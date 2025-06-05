@@ -116,7 +116,7 @@ class Game(Application):
 
                 gl_Position = m * model * skinMatrix * vec4(aPos, 1.0);
                 fragPos = vec3(model * vec4(aPos, 1.0));
-                normal = (mn * skinMatrix * vec4(aNormal, 1.0)).xyz;
+                normal = (mn * transpose(inverse(skinMatrix)) * vec4(aNormal, 1.0)).xyz;
                 uv = aUV;
             }
             """,
@@ -164,12 +164,12 @@ class Game(Application):
             """
             )
 
-        self.model = Model("res/Kick.glb")
+        # self.model = Model("res/Kick.glb")
         # self.model = Model("res/SportsCar.glb")
         # self.model.loadGLB("res/Dragon.glb")
         # self.model = Model("res/AlienSoldier.glb")
         # self.model.loadGLB("res/Idle.glb")
-        # self.model.loadGLB("res/Capoeira.glb")
+        self.model = Model("res/Capoeira.glb")
         # self.model.loadGLB("res/Ronin.glb")
         self.animator = Animator(self.model)
         self.animator.startAnimation(0)
@@ -228,7 +228,7 @@ class Game(Application):
         glUniform1f(glGetUniformLocation(self.shader.program, "t"), t)
         self.model.render(self.shader)
         self.shader.unbind()
-        delta_time: float = (pg.time.get_ticks() - previous_time) / 1000.0
+        delta_time: float = (pg.time.get_ticks() - previous_time)
         pg.display.set_caption(f'{delta_time}')
 
         # ratio = self.wallpaper.height / self.wallpaper.width
