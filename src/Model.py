@@ -128,6 +128,9 @@ def load_mesh_data(gltf) -> MeshData:
     return MeshData(primitivesLayout, I, V, N, UV, BID, W)
 
 def load_animations(gltf):
+    if len(gltf.animations) == 0:
+        return [], None, None
+
     animations = []
     for anim in gltf.animations:
         samplers = []
@@ -173,7 +176,7 @@ def load_animations(gltf):
 
     ordered_node_indexes = order_nodes_root_first(gltf.nodes)
     root = gltf.nodes[ordered_node_indexes[0]]
-    if root.rotation is not None:
+    if root.mesh is None and root.rotation is not None:
         root.rotation = [root.rotation[3], root.rotation[0], root.rotation[1], root.rotation[2]]
     return animations, skins, ordered_node_indexes
 
@@ -201,6 +204,7 @@ class Model:
                 T = glm.translate(glm.mat4(1.0), glm.vec3(node.translation))
             if node.rotation is not None:
                 R = glm.mat4_cast(glm.quat(node.rotation))
+                R = glm.mat4_cast(glm.quat(node.rotation[3], node.rotation[0], node.rotation[1], node.rotation[2]))
             if node.scale is not None:
                 S = glm.scale(glm.mat4(1.0), glm.vec3(node.scale))
             self.modelMats[node.mesh] = glm.mat4(T * R * S)

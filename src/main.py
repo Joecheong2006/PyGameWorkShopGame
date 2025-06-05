@@ -167,8 +167,8 @@ class Game(Application):
             """
             )
 
-        self.model = Model("res/Coordinate.glb", shader)
-        # self.model = Model("res/Kick.glb", shader)
+        # self.model = Model("res/Coordinate.glb", shader)
+        self.model = Model("res/Kick.glb", shader)
         # self.model = Model("res/Capoeira.glb", shader)
         # self.model = Model("res/AlienSoldier.glb", shader)
         # self.model = Model("res/TestScene2.glb", shader)
