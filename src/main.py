@@ -126,7 +126,6 @@ class Game(Application):
 
             out vec4 FragColor;
 
-            uniform float t;
             uniform vec3 color;
             uniform sampler2D diffuseTexture;
             uniform bool hasDiffuseTex;
@@ -144,7 +143,6 @@ class Game(Application):
                 }
 
                 float R = 2;
-                // vec3 lightPos = vec3(R * sin(t), 2, R * cos(t));
                 vec3 lightPos = vec3(0, 2, 2);
                 vec3 lightDir = normalize(lightPos - fragPos);
                 float factor = dot(N, lightDir);
@@ -225,7 +223,6 @@ class Game(Application):
             glUniform1i(glGetUniformLocation(self.shader.program, "hasAnimation"), 1)
             glUniformMatrix4fv(glGetUniformLocation(self.shader.program, "jointMatrices"), len(jointMatrices), GL_TRUE, np.array(jointMatrices))
         glUniformMatrix4fv(glGetUniformLocation(self.shader.program, "m"), 1, GL_FALSE, m.to_list())
-        glUniform1f(glGetUniformLocation(self.shader.program, "t"), t)
         self.model.render(self.shader)
         self.shader.unbind()
         delta_time: float = (pg.time.get_ticks() - previous_time)
