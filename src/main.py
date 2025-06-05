@@ -83,6 +83,8 @@ class Game(Application):
         self.cam = Camera(glm.vec3(0.0, 0.0, 1.0), glm.radians(45), self.window.width / self.window.height, 0.1, 100)
         self.cam.lookAt(self.cam.position + self.cam.forward)
 
+        print(f'GL_MAX_UNIFORM_BLOCK_SIZE: {glGetIntegerv(GL_MAX_UNIFORM_BLOCK_SIZE)}')
+
         self.shader = glShaderProgram(
             """
             #version 330 core
@@ -163,8 +165,6 @@ class Game(Application):
             )
 
         self.model = Model("res/Kick.glb")
-        # self.model = Model("res/Coordinate.glb")
-        # self.model.loadGLB("res/Dragon.glb")
         # self.model = Model("res/AlienSoldier.glb")
         # self.model = Model("res/Capoeira.glb")
         # self.model.loadGLB("res/Ronin.glb")
@@ -218,9 +218,7 @@ class Game(Application):
         previous_time = pg.time.get_ticks()
         self.shader.bind()
         if self.animator.animation:
-            jointMatrices = self.animator.joint_matrices
-            glUniform1i(glGetUniformLocation(self.shader.program, "hasAnimation"), 1)
-            glUniformMatrix4fv(glGetUniformLocation(self.shader.program, "jointMatrices"), len(jointMatrices), GL_TRUE, np.array(jointMatrices))
+            self.model.applyAnimation(self.shader, self.animator)
         glUniformMatrix4fv(glGetUniformLocation(self.shader.program, "m"), 1, GL_FALSE, m.to_list())
         self.model.render(self.shader)
         self.shader.unbind()
