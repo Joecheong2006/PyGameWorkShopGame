@@ -18,6 +18,7 @@ class Window:
         self.height = height
         self.clock = pg.time.Clock()
         self.fps = fps
+        self.deltaTime = 1.0 / self.fps
 
         # Initialize OpenGL
         version = (3, 3)
@@ -34,7 +35,7 @@ class Window:
 
     def flip(self):
         pg.display.flip()
-        self.clock.tick(self.fps)
+        self.deltaTime = self.clock.tick(self.fps) * 0.001
 
     def dispatchEvent(self, handler: WindowEventHandler):
         self.keys = pg.key.get_pressed()
