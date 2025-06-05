@@ -50,7 +50,7 @@ class Animator:
         self.target.jointMatrices = calc_joint_matrices(self.target)
 
 def calc_joint_matrices(model):
-    assert len(model.skins) == 1
+    # assert len(model.skins) == 1
     for skin in model.skins:
         joint_matrices = []
         for joint_index, inverse_bind_matrix in zip(skin.joints, skin.inverse_bind_matrices):
