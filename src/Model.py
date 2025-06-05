@@ -2,6 +2,7 @@ from opengl_util import *
 import pygltflib
 import numpy as np
 from pyglm import glm
+# import glm
 
 from PIL import Image
 import io
@@ -188,10 +189,10 @@ class Model:
         self.animations, self.skins, self.ordered_node_indexes = load_animations(gltf)
         self.nodes = gltf.nodes
 
-        self.modelMats = [glm.mat4(1)] * len(self.nodes)
+        self.modelMats = {}
 
         for node in self.nodes:
-            if node.mesh == None:
+            if node.mesh is None:
                 continue
             T = glm.mat4()
             R = glm.mat4()
@@ -247,11 +248,15 @@ class Model:
     def render(self, camera):
         self.shader.bind()
         m = camera.projectionMat * camera.viewMat
-        glUniformMatrix4fv(glGetUniformLocation(self.shader.program, "m"), 1, GL_FALSE, m.to_list())
+        glUniformMatrix4fv(glGetUniformLocation(self.shader.program, "vp"), 1, GL_FALSE, m.to_list())
         if self.animating:
             glUniform1i(glGetUniformLocation(self.shader.program, "hasAnimation"), 1)
             glUniformMatrix4fv(glGetUniformLocation(self.shader.program, "jointMatrices"), len(self.jointMatrices), GL_TRUE, np.array(self.jointMatrices))
 
+        import pygame as pg
+        t = pg.time.get_ticks() * 0.001
+        # glUniform3f(glGetUniformLocation(self.shader.program, "lightPos"), 2 * glm.sin(t), 2, 2 * glm.cos(t))
+        glUniform3f(glGetUniformLocation(self.shader.program, "lightPos"), 0, 3, 3)
         glBindVertexArray(self.vao)
         for i, entry in enumerate(self.layout):
             glUniform3f(glGetUniformLocation(self.shader.program, "color"), *self.materials[i].baseColor)
