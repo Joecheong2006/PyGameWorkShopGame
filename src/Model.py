@@ -241,6 +241,11 @@ class Model:
         self.vbos.delete()
         glDeleteVertexArrays(1, [self.vao])
 
+    def applyAnimation(self, shader, animator):
+        jointMatrices = animator.joint_matrices
+        glUniform1i(glGetUniformLocation(shader.program, "hasAnimation"), 1)
+        glUniformMatrix4fv(glGetUniformLocation(shader.program, "jointMatrices"), len(jointMatrices), GL_TRUE, np.array(jointMatrices))
+
     def render(self, shader):
         glBindVertexArray(self.vao)
         for i, entry in enumerate(self.layout):
