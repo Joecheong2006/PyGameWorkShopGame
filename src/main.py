@@ -18,6 +18,8 @@ class Game(Application):
         super().__init__(WINDOW_SIZE)
 
         glEnable(GL_DEPTH_TEST)
+        glDisable(GL_CULL_FACE);
+
         glEnable(GL_BLEND)
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
 
@@ -94,7 +96,7 @@ class Game(Application):
             layout (location = 3) in uvec4 aJointIDs;
             layout (location = 4) in vec4 aWeights;
 
-            uniform mat4 m;
+            uniform mat4 vp;
             uniform mat4 model;
 
             uniform mat4 jointMatrices[100];
@@ -116,9 +118,10 @@ class Game(Application):
                 }
 
                 mat4 fullTransform = model * skinMatrix;
-                gl_Position = m * fullTransform * vec4(aPos, 1.0);
+                gl_Position = vp * fullTransform * vec4(aPos, 1.0);
                 fragPos = vec3(model * vec4(aPos, 1.0));
-                normal = normalize(transpose(inverse(mat3(model * skinMatrix))) * aNormal);
+                // normal = normalize(transpose(inverse(mat3(model * skinMatrix))) * aNormal);
+                normal = normalize(transpose(inverse(mat3(model))) * mat3(skinMatrix) * aNormal);
                 uv = aUV;
             }
             """,
@@ -130,6 +133,7 @@ class Game(Application):
             uniform vec3 color;
             uniform sampler2D diffuseTexture;
             uniform bool hasDiffuseTex;
+            uniform vec3 lightPos;
 
             in vec3 fragPos;
             in vec3 normal;
@@ -143,8 +147,7 @@ class Game(Application):
                     N = -N;
                 }
 
-                float R = 2;
-                vec3 lightPos = vec3(0, 2, 2);
+                // vec3 lightPos = vec3(0, 2, 2);
                 vec3 lightDir = normalize(lightPos - fragPos);
                 float factor = dot(N, lightDir);
 
@@ -164,10 +167,13 @@ class Game(Application):
             """
             )
 
-        self.model = Model("res/Kick.glb", shader)
-        # self.model = Model("res/AlienSoldier.glb")
-        # self.model = Model("res/Capoeira.glb")
-        # self.model.loadGLB("res/Ronin.glb")
+        self.model = Model("res/Coordinate.glb", shader)
+        # self.model = Model("res/Kick.glb", shader)
+        # self.model = Model("res/Capoeira.glb", shader)
+        # self.model = Model("res/AlienSoldier.glb", shader)
+        # self.model = Model("res/TestScene2.glb", shader)
+        # self.model = Model("res/Ronin.glb", shader)
+        # self.model = Model("res/Monkey.glb", shader)
         self.animator = Animator(self.model)
         self.animator.startAnimation(0)
 
@@ -213,7 +219,7 @@ class Game(Application):
 
         m = self.cam.projectionMat * self.cam.viewMat
 
-        self.animator.playAnimation(1.0 / 100)
+        self.animator.playAnimation(self.window.deltaTime)
 
         previous_time = pg.time.get_ticks()
         self.model.render(self.cam)
