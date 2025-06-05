@@ -14,6 +14,7 @@ class Animator:
             return 
         self.animation = self.target.animations[animIndex]
         self.time = 0 % self.animation.duration
+        self.target.animating = True
     
     def playAnimation(self, deltaTime: float):
         if self.animation == None:
@@ -46,7 +47,7 @@ class Animator:
                 parent_node = self.target.nodes[parent_index]
                 node.transform = parent_node.transform @ node.transform
 
-        self.joint_matrices = calc_joint_matrices(self.target)
+        self.target.jointMatrices = calc_joint_matrices(self.target)
 
 def calc_joint_matrices(model):
     assert len(model.skins) == 1

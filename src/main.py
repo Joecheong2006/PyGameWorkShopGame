@@ -85,7 +85,7 @@ class Game(Application):
 
         print(f'GL_MAX_UNIFORM_BLOCK_SIZE: {glGetIntegerv(GL_MAX_UNIFORM_BLOCK_SIZE)}')
 
-        self.shader = glShaderProgram(
+        shader = glShaderProgram(
             """
             #version 330 core
             layout (location = 0) in vec3 aPos;
@@ -164,7 +164,7 @@ class Game(Application):
             """
             )
 
-        self.model = Model("res/Kick.glb")
+        self.model = Model("res/Kick.glb", shader)
         # self.model = Model("res/AlienSoldier.glb")
         # self.model = Model("res/Capoeira.glb")
         # self.model.loadGLB("res/Ronin.glb")
@@ -216,12 +216,7 @@ class Game(Application):
         self.animator.playAnimation(1.0 / 100)
 
         previous_time = pg.time.get_ticks()
-        self.shader.bind()
-        if self.animator.animation:
-            self.model.applyAnimation(self.shader, self.animator)
-        glUniformMatrix4fv(glGetUniformLocation(self.shader.program, "m"), 1, GL_FALSE, m.to_list())
-        self.model.render(self.shader)
-        self.shader.unbind()
+        self.model.render(self.cam)
         delta_time: float = (pg.time.get_ticks() - previous_time)
         pg.display.set_caption(f'{delta_time}')
 

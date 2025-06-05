@@ -177,7 +177,8 @@ def load_animations(gltf):
     return animations, skins, ordered_node_indexes
 
 class Model:
-    def __init__(self, path: str):
+    def __init__(self, path: str, shader: glShaderProgram):
+        self.shader = shader
         gltf = pygltflib.GLTF2().load(path)
         if gltf == None:
             raise RuntimeError(f"Failed to load {path}")
@@ -235,27 +236,31 @@ class Model:
 
         self.vbos.setIndexBuffer(0, meshData.indices, meshData.indices.size, GL_STATIC_DRAW)
 
+        self.jointMatrices = []
+        self.animating = False
         glBindVertexArray(0)
 
     def delete(self):
         self.vbos.delete()
         glDeleteVertexArrays(1, [self.vao])
 
-    def applyAnimation(self, shader, animator):
-        jointMatrices = animator.joint_matrices
-        glUniform1i(glGetUniformLocation(shader.program, "hasAnimation"), 1)
-        glUniformMatrix4fv(glGetUniformLocation(shader.program, "jointMatrices"), len(jointMatrices), GL_TRUE, np.array(jointMatrices))
+    def render(self, camera):
+        self.shader.bind()
+        m = camera.projectionMat * camera.viewMat
+        glUniformMatrix4fv(glGetUniformLocation(self.shader.program, "m"), 1, GL_FALSE, m.to_list())
+        if self.animating:
+            glUniform1i(glGetUniformLocation(self.shader.program, "hasAnimation"), 1)
+            glUniformMatrix4fv(glGetUniformLocation(self.shader.program, "jointMatrices"), len(self.jointMatrices), GL_TRUE, np.array(self.jointMatrices))
 
-    def render(self, shader):
         glBindVertexArray(self.vao)
         for i, entry in enumerate(self.layout):
-            glUniform3f(glGetUniformLocation(shader.program, "color"), *self.materials[i].baseColor)
+            glUniform3f(glGetUniformLocation(self.shader.program, "color"), *self.materials[i].baseColor)
             model = self.modelMats[entry.meshIndex]
-            glUniformMatrix4fv(glGetUniformLocation(shader.program, "model"), 1, GL_FALSE, model.to_list())
+            glUniformMatrix4fv(glGetUniformLocation(self.shader.program, "model"), 1, GL_FALSE, model.to_list())
 
-            glUniform1i(glGetUniformLocation(shader.program, "hasDiffuseTex"), self.materials[i].hasDiffuseTex)
+            glUniform1i(glGetUniformLocation(self.shader.program, "hasDiffuseTex"), self.materials[i].hasDiffuseTex)
             if self.materials[i].hasDiffuseTex:
                 self.materials[i].diffuseTexture.bind(0)
-                glUniform1i(glGetUniformLocation(shader.program, "diffuseTexture"), 0)
+                glUniform1i(glGetUniformLocation(self.shader.program, "diffuseTexture"), 0)
 
             glDrawElementsBaseVertex(GL_TRIANGLES, entry.indexCount, GL_UNSIGNED_INT, ctypes.c_void_p(4 * entry.indexOffset), entry.vertexOffset)
