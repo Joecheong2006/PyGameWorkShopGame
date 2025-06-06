@@ -2,7 +2,6 @@ from opengl_util import *
 import pygltflib
 import numpy as np
 from pyglm import glm
-# import glm
 
 from PIL import Image
 import io
@@ -251,7 +250,7 @@ class Model:
 
     def render(self, camera):
         self.shader.bind()
-        m = camera.projectionMat * camera.viewMat
+        m = camera.projectionMat * camera.getViewMatrix()
         glUniformMatrix4fv(glGetUniformLocation(self.shader.program, "vp"), 1, GL_FALSE, m.to_list())
         if self.animating:
             glUniform1i(glGetUniformLocation(self.shader.program, "hasAnimation"), 1)

@@ -1,38 +1,43 @@
-import glm
+from pyglm import glm
+import math
+
+from collections import namedtuple
+PerspectiveCameraState = namedtuple('PerspectiveCameraState', 'fov aspect near far')
+OrthogonalCameraState = namedtuple('OrthogonalCameraState', 'left right bottom top near far')
 
 class Camera:
-    def __init__(self, position: glm.vec3, fov: float, aspect: float, near: float, far: float):
-        self.fov = fov
-        self.aspect = aspect
-        self.near = near
-        self.far = far
-
+    def __init__(self, position: glm.vec3):
         self.position = position
-        self.rotation = glm.vec3(0, 0, -90)
+        self.rotation = glm.quat(glm.vec3(0))
 
-        self.up = glm.vec3(0, 1, 0)
-        self.right = glm.vec3(1, 0, 0)
-        self.forward = glm.vec3(0, 0, -1)
+        self.max_pitch = math.radians(89.0)
+        self.pitch = 0.0
+        self.yaw = 0.0
 
-        self.viewMat = glm.mat4(1.0)
         self.projectionMat = glm.mat4(1.0)
-        self.updateProjectionMat()
+
+        self.state = None
+
+    def forward(self):
+        return self.rotation * glm.vec3(0, 0, -1)
+
+    def up(self):
+        return self.rotation * glm.vec3(0, 1, 0)
+
+    def right(self):
+        return self.rotation * glm.vec3(1, 0, 0)
+
+    def getViewMatrix(self):
+        target = self.position + self.forward()
+        return glm.lookAt(self.position, target, self.up())
 
     def lookAt(self, target: glm.vec3):
-        self.viewMat = glm.lookAt(self.position, target, self.up)
+        self.viewMat = glm.lookAt(self.position, target, self.up())
 
-    def updateProjectionMat(self):
-        self.projectionMat = glm.perspective(self.fov, self.aspect, self.near, self.far)
+    def calOrthogonalMat(self, state: OrthogonalCameraState):
+        self.projectionMat = glm.ortho(*state)
+        self.state = state
 
-    def rotate(self, angle: glm.vec3):
-        self.rotation += angle
-
-        direction = glm.vec3()
-        direction.x = glm.cos(glm.radians(self.rotation.z)) * glm.cos(glm.radians(self.rotation.y))
-        direction.y = glm.sin(glm.radians(self.rotation.y))
-        direction.z = glm.sin(glm.radians(self.rotation.z)) * glm.cos(glm.radians(self.rotation.y))
-
-        self.forward = glm.normalize(direction)
-        self.right = glm.cross(self.forward, glm.vec3(0, 1, 0))
-        self.up = glm.cross(self.right, self.forward)
-        self.lookAt(self.position + self.forward)
+    def calPerspectiveMat(self, state: PerspectiveCameraState):
+        self.projectionMat = glm.perspective(*state)
+        self.state = state

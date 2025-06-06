@@ -34,7 +34,7 @@ class Animator:
             elif channel.path == 'scale':
                 self.target.nodes[channel.node].scale = interpolated_value
 
-        self.time += deltaTime * 1.0
+        self.time += deltaTime
         if self.time >= self.animation.duration:
             self.time %= self.animation.duration
 

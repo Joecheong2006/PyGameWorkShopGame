@@ -9,10 +9,11 @@ from Camera import *
 
 class Game(Application):
     def __init__(self):
-        # scale = (4, 4)
-        # PIXEL_WIDTH, PIXEL_HEIGHT = 320, 180
-        scale = (1, 1)
-        PIXEL_WIDTH, PIXEL_HEIGHT = 320 * 4, 180 * 4
+        scale = (4, 4)
+        PIXEL_WIDTH, PIXEL_HEIGHT = 320, 180
+        # scale = (1, 1)
+        # PIXEL_WIDTH, PIXEL_HEIGHT = 320 * 4, 180 * 4
+
         WINDOW_SIZE = (PIXEL_WIDTH * scale[0], PIXEL_HEIGHT * scale[1])
 
         super().__init__(WINDOW_SIZE)
@@ -82,8 +83,10 @@ class Game(Application):
                 """)
         # self.wallpaper = glTexture.loadTexture('res/GreenGrass.png', GL_NEAREST)
 
-        self.cam = Camera(glm.vec3(0.0, 0.0, 1.0), glm.radians(45), self.window.width / self.window.height, 0.1, 100)
-        self.cam.lookAt(self.cam.position + self.cam.forward)
+        aspect = self.window.width / self.window.height
+        self.cam = Camera(glm.vec3(0.0, 0.0, 1.0))
+        self.cam.calOrthogonalMat(OrthogonalCameraState(-1, 1, -1 / aspect, 1 / aspect, 0.1, 100))
+        self.cam.calPerspectiveMat(PerspectiveCameraState(glm.radians(45), aspect, 0.1, 100))
 
         print(f'GL_MAX_UNIFORM_BLOCK_SIZE: {glGetIntegerv(GL_MAX_UNIFORM_BLOCK_SIZE)}')
 
@@ -167,15 +170,15 @@ class Game(Application):
             """
             )
 
-        # self.model = Model("res/Coordinate.glb", shader)
-        self.model = Model("res/Kick.glb", shader)
+        self.model = Model("res/M.glb", shader)
+        # self.model = Model("res/Kick.glb", shader)
         # self.model = Model("res/Capoeira.glb", shader)
         # self.model = Model("res/AlienSoldier.glb", shader)
         # self.model = Model("res/TestScene2.glb", shader)
         # self.model = Model("res/Ronin.glb", shader)
         # self.model = Model("res/Monkey.glb", shader)
         self.animator = Animator(self.model)
-        self.animator.startAnimation(0)
+        self.animator.startAnimation(1)
 
         glClearColor(0.1, 0.1, 0.1, 1)
 
@@ -192,15 +195,23 @@ class Game(Application):
             pg.mouse.set_visible(not self.lockCursor)
 
     def onWindowMouseMotion(self, pos: tuple[int, int], rel: tuple[int, int], button: tuple[bool, bool, bool], touch: bool):
-        sensitivity = 0.1
-
-        if self.cam.rotation.y > 89.0:
-            self.cam.rotation.y = 89.0
-        if self.cam.rotation.y < -89.0:
-            self.cam.rotation.y = -89.0
+        sensitivity = 0.003
 
         dx, dy = rel[0], rel[1]
-        self.cam.rotate(glm.vec3(0, -dy * sensitivity, dx * sensitivity))
+
+        yaw_angle = -dx * sensitivity
+        pitch_angle = -dy * sensitivity
+
+        new_pitch = self.cam.pitch + pitch_angle
+        new_pitch = max(-self.cam.max_pitch, min(self.cam.max_pitch, new_pitch))
+        pitch_angle = new_pitch - self.cam.pitch
+        self.cam.pitch = new_pitch
+
+        yaw_quat   = glm.angleAxis(yaw_angle, glm.vec3(0, 1, 0))
+        pitch_quat = glm.angleAxis(pitch_angle, self.cam.right())
+
+        delta_rotation = yaw_quat * pitch_quat
+        self.cam.rotation = glm.normalize(delta_rotation * self.cam.rotation)
 
     def onWindowClose(self):
         self.renderer.delete()
@@ -217,7 +228,7 @@ class Game(Application):
 
         t = pg.time.get_ticks() * 0.001
 
-        m = self.cam.projectionMat * self.cam.viewMat
+        m = self.cam.projectionMat * self.cam.getViewMatrix()
 
         self.animator.playAnimation(self.window.deltaTime)
 
@@ -243,18 +254,17 @@ class Game(Application):
         keys = self.window.keys
         dir = glm.vec3(0, 0, 0)
         if keys[pg.K_w]:
-            dir += self.cam.forward
+            dir += self.cam.forward()
         if keys[pg.K_s]:
-            dir -= self.cam.forward
+            dir -= self.cam.forward()
         if keys[pg.K_d]:
-            dir += self.cam.right
+            dir += self.cam.right()
         if keys[pg.K_a]:
-            dir -= self.cam.right
+            dir -= self.cam.right()
         if keys[pg.K_SPACE]:
             dir += glm.vec3(0, 1, 0)
         if dir != glm.vec3(0):
-            self.cam.position += glm.normalize(dir) / self.window.fps
-            self.cam.lookAt(self.cam.position + self.cam.forward)
+            self.cam.position += 2 * glm.normalize(dir) / self.window.fps
         
         if self.lockCursor:
             pg.mouse.set_pos((self.window.width / 2, self.window.height / 2))
