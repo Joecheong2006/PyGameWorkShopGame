@@ -10,7 +10,7 @@ from collections import namedtuple
 MeshData = namedtuple('MeshesData', 'primitivesLayout indices vertices normals uvs boneIDs weights')
 AnimationSampler = namedtuple('AnimationSampler', 'interpolation keyframe_times keyframe_values')
 AnimationChannel = namedtuple('AnimationChannel', 'sampler node path')
-Animation = namedtuple('Animation', 'samplers channels, duration')
+Animation = namedtuple('Animation', 'name samplers channels duration')
 Skin = namedtuple('Skin', 'joints inverse_bind_matrices')
 
 class Material:
@@ -144,7 +144,7 @@ def load_animations(gltf):
         for chnl in anim.channels:
             channels.append(AnimationChannel(chnl.sampler, chnl.target.node, chnl.target.path))
         
-        a = Animation(samplers, channels, duration)
+        a = Animation(anim.name, samplers, channels, duration)
         animations.append(a)
 
     skins = []
