@@ -3,9 +3,16 @@ from Application import *
 from opengl_util import *
 from QuadRenderer import *
 from Model import Model
-from Animator import Animator
+from Animator import Animator, AnimationState
 from RenderPipeline import PostProcessingPass
 from Camera import *
+
+class KickEvent:
+    def __init__(self):
+        self.action = False
+
+    def startEvent(self, animator):
+        return self.action
 
 class Game(Application):
     def __init__(self):
@@ -84,7 +91,7 @@ class Game(Application):
         # self.wallpaper = glTexture.loadTexture('res/GreenGrass.png', GL_NEAREST)
 
         aspect = self.window.width / self.window.height
-        self.cam = Camera(glm.vec3(0.0, 0.0, 1.0))
+        self.cam = Camera(glm.vec3(0.0, 1.0, 3.0))
         self.cam.calOrthogonalMat(OrthogonalCameraState(-1, 1, -1 / aspect, 1 / aspect, 0.1, 100))
         self.cam.calPerspectiveMat(PerspectiveCameraState(glm.radians(45), aspect, 0.1, 100))
 
@@ -178,7 +185,12 @@ class Game(Application):
         # self.model = Model("res/Ronin.glb", shader)
         # self.model = Model("res/Monkey.glb", shader)
         self.animator = Animator(self.model)
-        self.animator.startAnimation(1)
+        self.animator.setDefaultState(0)
+        self.animator.addAnimationState(1, loop=False)
+
+        self.kickEvent = KickEvent()
+        self.animator.addTransition(0, 1, 0.2, self.kickEvent.startEvent)
+        self.animator.addTransition(1, 0, 0.2)
 
         glClearColor(0.1, 0.1, 0.1, 1)
 
@@ -252,6 +264,9 @@ class Game(Application):
         self.postProcessingPass.render()
 
         keys = self.window.keys
+
+        self.kickEvent.action = keys[pg.K_k]
+
         dir = glm.vec3(0, 0, 0)
         if keys[pg.K_w]:
             dir += self.cam.forward()

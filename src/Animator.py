@@ -2,41 +2,91 @@ from Model import Model
 from pyglm import glm
 import numpy as np
 
-class Animator:
-    def __init__(self, model: Model):
-        self.animation = None
-        self.target: Model = model
-        self.time = 0
-        self.duration = 0
+class AnimationState:
+    def __init__(self, anim, animIndex, timeScale, loop):
+        self.animIndex: int = animIndex
+        self.anim = anim
+        # self.duration: float = self.anim.duration[0] if self.anim else 0
+        self.duration: float = self.anim.duration[0] if self.anim else 0
+        self.time: float = 0
+        self.timeScale: float = timeScale
+        self.loop: bool = loop
+        self.finished: bool = False
 
-    def startAnimation(self, animIndex: int):
-        if len(self.target.animations) == 0:
-            return 
-        self.animation = self.target.animations[animIndex]
-        self.time = 0 % self.animation.duration
-        self.target.animating = True
-    
-    def playAnimation(self, deltaTime: float):
-        if self.animation == None:
+    def calculateAnimation(self, target):
+        if self.anim == None:
             return
 
-        for channel in self.animation.channels:
-            sampler = self.animation.samplers[channel.sampler]
+        for channel in self.anim.channels:
+            sampler = self.anim.samplers[channel.sampler]
             keyframe_times = sampler.keyframe_times
             keyframe_values = sampler.keyframe_values
 
             interpolated_value = interp_anim_vec(channel.path, self.time, sampler.interpolation, keyframe_times, keyframe_values)
 
             if channel.path == 'translation':
-                self.target.nodes[channel.node].translation = interpolated_value
+                target.nodes[channel.node].translation = interpolated_value
             elif channel.path == 'rotation':
-                self.target.nodes[channel.node].rotation = interpolated_value
+                target.nodes[channel.node].rotation = interpolated_value
             elif channel.path == 'scale':
-                self.target.nodes[channel.node].scale = interpolated_value
+                target.nodes[channel.node].scale = interpolated_value
 
-        self.time += deltaTime
-        if self.time >= self.animation.duration:
-            self.time %= self.animation.duration
+    def update(self, deltaTime: float):
+        self.time += deltaTime * self.timeScale
+        if self.time > self.duration:
+            if self.loop:
+                self.time = np.fmod(self.time, self.duration)
+            else:
+                self.time = self.duration
+                self.finished = True
+
+    def reset(self):
+        self.time = 0
+        self.finished = False
+
+class Animator:
+    def __init__(self, model: Model):
+        model.animating = True
+        self.target: Model = model
+
+        self.currentState: AnimationState | None = None
+        self.animationStates: list[AnimationState] = [AnimationState(None, -1, 0, 0)]
+        self.transitions: list[AnimationTransition] = []
+
+        self.isTransitioning: bool = False
+        self.transitionIndex: int = -1
+
+    def addTransition(self, startAnimIndex, endAnimIndex, duration: float, event = None, offset: float = 0):
+        self.transitions.append(AnimationTransition(startAnimIndex, endAnimIndex, duration, event, offset))
+
+    def addAnimationState(self, animIndex: int, timeScale: float = 1, loop = True):
+        self.animationStates.append(AnimationState(self.target.animations[animIndex], animIndex, timeScale, loop))
+
+    def setDefaultState(self, animIndex: int, timeScale: float = 1, loop = True):
+        self.currentState = self.animationStates[0] = AnimationState(self.target.animations[animIndex], animIndex, timeScale, loop)
+    
+    def playAnimation(self, deltaTime: float):
+        if self.currentState == None:
+            return
+
+        self.currentState.calculateAnimation(self.target)
+        self.currentState.update(deltaTime)
+
+        if not self.isTransitioning:
+            for i, transition in enumerate(self.transitions):
+                if self.currentState.animIndex == transition.startAnimIndex and transition.event(self):
+                    self.isTransitioning = True
+                    self.transitionIndex = i
+                    self.animationStates[transition.endAnimIndex].reset()
+
+        if self.isTransitioning:
+            transition = self.transitions[self.transitionIndex]
+            if not transition.apply(deltaTime, self):
+                self.currentState.reset()
+                self.isTransitioning = False
+                self.transitionIndex = -1
+                self.currentState = self.animationStates[transition.endAnimIndex]
+                transition.reset()
 
         for node in self.target.nodes:
             node.transform = calc_local_transform(node)
@@ -88,8 +138,53 @@ def interp_anim_vec(path, t, interpolation, keyframe_times, keyframe_values):
 
 def get_lerp(t, keyframe_times):
     for i, (t0, t1) in enumerate(zip(np.append([0.0], keyframe_times[:-1]), keyframe_times)):
+        t1 = float(t1)
         if t0 <= t < t1:
             j = (i+1) % len(keyframe_times)
             t = (t - t0) / (t1 - t0)
             return i, j, t
     return 0, 0, 0
+
+class AnimationTransition:
+    def __init__(self, startAnimIndex: int, endAnimIndex: int, duration: float, event, offset: float):
+        self.startAnimIndex: int = startAnimIndex
+        self.endAnimIndex: int = endAnimIndex
+        self.duration = duration
+        self.durationInverse: float = 1.0 / duration
+        self.offset = glm.clamp(offset, 0, 1)
+        self.event = event
+        if self.event == None:
+            def endPlayBack(animator: Animator):
+                state = animator.animationStates[self.startAnimIndex]
+                return state.duration - state.time <= self.duration
+                return state.finished
+            self.event = endPlayBack
+
+        self.currentDuration: float = 0
+
+    def apply(self, deltaTime: float, animator: Animator) -> bool:
+        states = animator.animationStates
+        assert self.endAnimIndex < len(states)
+        endAnimState = states[self.endAnimIndex]
+        endAnim = endAnimState.anim
+
+        for channel in endAnim.channels:
+            sampler = endAnim.samplers[channel.sampler]
+            keyframe_times = sampler.keyframe_times
+            keyframe_values = sampler.keyframe_values
+
+            interpolated_value = interp_anim_vec(channel.path, endAnimState.time, sampler.interpolation, keyframe_times, keyframe_values)
+
+            if channel.path == 'translation':
+                animator.target.nodes[channel.node].translation = glm.lerp(animator.target.nodes[channel.node].translation, interpolated_value, self.currentDuration)
+            elif channel.path == 'rotation':
+                animator.target.nodes[channel.node].rotation = glm.slerp(glm.quat(animator.target.nodes[channel.node].rotation), interpolated_value, self.currentDuration)
+            elif channel.path == 'scale':
+                animator.target.nodes[channel.node].scale = interpolated_value
+
+        self.currentDuration += deltaTime * self.durationInverse
+        endAnimState.time += deltaTime * endAnimState.timeScale
+        return self.currentDuration <= 1
+
+    def reset(self):
+        self.currentDuration = 0
