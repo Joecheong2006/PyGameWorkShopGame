@@ -22,6 +22,90 @@ class Transform:
     def getMatrix(self):
         return glm.translate(glm.mat4(1.0), glm.vec3(self.position)) * glm.mat4_cast(self.rotation) * glm.scale(glm.mat4(1.0), self.scale)
 
+model_vert_shader = """
+    #version 330 core
+    layout (location = 0) in vec3 aPos;
+    layout (location = 1) in vec3 aNormal;
+    layout (location = 2) in vec2 aUV;
+    layout (location = 3) in uvec4 aJointIDs;
+    layout (location = 4) in vec4 aWeights;
+
+    uniform mat4 vp;
+    uniform mat4 model;
+    uniform mat4 inverseModel;
+
+    uniform mat4 jointMatrices[100];
+
+    uniform bool hasAnimation;
+
+    out vec3 fragPos;
+    out vec3 normal;
+    out vec2 uv;
+
+    void main() {
+        mat4 skinMatrix = mat4(1);
+        if (hasAnimation) {
+            skinMatrix =
+            aWeights.x * jointMatrices[aJointIDs.x] +
+            aWeights.y * jointMatrices[aJointIDs.y] +
+            aWeights.z * jointMatrices[aJointIDs.z] +
+            aWeights.w * jointMatrices[aJointIDs.w];
+        }
+
+        mat4 fullTransform = model * skinMatrix;
+        gl_Position = vp * fullTransform * vec4(aPos, 1.0);
+        fragPos = vec3(model * vec4(aPos, 1.0));
+        // normal = normalize(transpose(inverse(mat3(model * skinMatrix))) * aNormal);
+        normal = normalize(mat3(inverseModel) * mat3(skinMatrix) * aNormal);
+        uv = aUV;
+    }
+    """
+
+model_frag_shader = """
+    #version 330 core
+
+    out vec4 FragColor;
+
+    uniform vec3 color;
+    uniform sampler2D diffuseTexture;
+    uniform bool hasDiffuseTex;
+    uniform vec3 lightPos;
+
+    in vec3 fragPos;
+    in vec3 normal;
+    in vec2 uv;
+
+    #define TOON_LEVEL 10.0
+
+    void main() {
+        vec3 N = normal;
+        if (!gl_FrontFacing) {
+            N = -N;
+        }
+
+        // vec3 lightPos = vec3(0, 2, 2);
+        vec3 lightDir = normalize(lightPos - fragPos);
+        float factor = dot(N, lightDir);
+
+        if (factor > 0) {
+            factor = ceil(factor * TOON_LEVEL) / TOON_LEVEL;
+        }
+        else {
+            factor = 0;
+        }
+
+        vec3 finalColor = vec3(1.0);
+        if (!hasDiffuseTex) {
+            finalColor = color;
+        }
+        else {
+            finalColor = texture(diffuseTexture, uv).rgb;
+        }
+        finalColor *= (N + 1.0) * 0.5;
+        FragColor = vec4(finalColor * factor, 1);
+    }
+    """
+
 class Material:
     def __init__(self):
         self.baseColor = [1, 1, 1]
@@ -192,10 +276,10 @@ def load_animations(gltf):
     return animNameIndexMap, animations, skins, ordered_node_indexes
 
 class Model:
-    def __init__(self, path: str, shader: glShaderProgram):
+    def __init__(self, path: str):
         self.transform = Transform()
 
-        self.shader = shader
+        self.shader = glShaderProgram(model_vert_shader, model_frag_shader)
         gltf = pygltflib.GLTF2().load(path)
         if gltf == None:
             raise RuntimeError(f"Failed to load {path}")

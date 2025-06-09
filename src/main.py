@@ -11,18 +11,17 @@ from AnimationSystem import AnimationSystem
 from GameObjectSystem import *
 
 class Player(GameObject):
-    def __init__(self, shader: glShaderProgram):
-        self.shader = shader
+    def __init__(self):
         super().__init__(self)
 
     def OnStart(self):
-        self.model = Model("res/M.glb", self.shader)
-        # self.model = Model("res/Kick.glb", shader)
-        # self.model = Model("res/Capoeira.glb", shader)
-        # self.model = Model("res/AlienSoldier.glb", shader)
-        # self.model = Model("res/TestScene2.glb", shader)
-        # self.model = Model("res/Ronin.glb", shader)
-        # self.model = Model("res/Monkey.glb", shader)
+        self.model = Model("res/M.glb")
+        # self.model = Model("res/Kick.glb")
+        # self.model = Model("res/Capoeira.glb")
+        # self.model = Model("res/AlienSoldier.glb")
+        # self.model = Model("res/TestScene2.glb")
+        # self.model = Model("res/Ronin.glb")
+        # self.model = Model("res/Monkey.glb")
 
         self.animator = Animator(self.model)
         self.animator.setDefaultState("Idle")
@@ -139,92 +138,7 @@ class Game(Application):
 
         print(f'GL_MAX_UNIFORM_BLOCK_SIZE: {glGetIntegerv(GL_MAX_UNIFORM_BLOCK_SIZE)}')
 
-        shader = glShaderProgram(
-            """
-            #version 330 core
-            layout (location = 0) in vec3 aPos;
-            layout (location = 1) in vec3 aNormal;
-            layout (location = 2) in vec2 aUV;
-            layout (location = 3) in uvec4 aJointIDs;
-            layout (location = 4) in vec4 aWeights;
-
-            uniform mat4 vp;
-            uniform mat4 model;
-            uniform mat4 inverseModel;
-
-            uniform mat4 jointMatrices[100];
-
-            uniform bool hasAnimation;
-
-            out vec3 fragPos;
-            out vec3 normal;
-            out vec2 uv;
-
-            void main() {
-                mat4 skinMatrix = mat4(1);
-                if (hasAnimation) {
-                    skinMatrix =
-                    aWeights.x * jointMatrices[aJointIDs.x] +
-                    aWeights.y * jointMatrices[aJointIDs.y] +
-                    aWeights.z * jointMatrices[aJointIDs.z] +
-                    aWeights.w * jointMatrices[aJointIDs.w];
-                }
-
-                mat4 fullTransform = model * skinMatrix;
-                gl_Position = vp * fullTransform * vec4(aPos, 1.0);
-                fragPos = vec3(model * vec4(aPos, 1.0));
-                // normal = normalize(transpose(inverse(mat3(model * skinMatrix))) * aNormal);
-                normal = normalize(mat3(inverseModel) * mat3(skinMatrix) * aNormal);
-                uv = aUV;
-            }
-            """,
-            """
-            #version 330 core
-
-            out vec4 FragColor;
-
-            uniform vec3 color;
-            uniform sampler2D diffuseTexture;
-            uniform bool hasDiffuseTex;
-            uniform vec3 lightPos;
-
-            in vec3 fragPos;
-            in vec3 normal;
-            in vec2 uv;
-
-            #define TOON_LEVEL 10.0
-
-            void main() {
-                vec3 N = normal;
-                if (!gl_FrontFacing) {
-                    N = -N;
-                }
-
-                // vec3 lightPos = vec3(0, 2, 2);
-                vec3 lightDir = normalize(lightPos - fragPos);
-                float factor = dot(N, lightDir);
-
-                if (factor > 0) {
-                    factor = ceil(factor * TOON_LEVEL) / TOON_LEVEL;
-                }
-                else {
-                    factor = 0;
-                }
-
-                vec3 finalColor = vec3(1.0);
-                if (!hasDiffuseTex) {
-                    finalColor = color;
-                }
-                else {
-                    finalColor = texture(diffuseTexture, uv).rgb;
-                }
-                finalColor *= (N + 1.0) * 0.5;
-                FragColor = vec4(finalColor * factor, 1);
-            }
-            """
-            )
-
-        self.player = Player(shader)
+        self.player = Player()
 
         glClearColor(0.1, 0.1, 0.1, 1)
 
