@@ -28,6 +28,7 @@ class Window:
         pg.display.gl_set_attribute(pg.GL_CONTEXT_PROFILE_MASK, pg.GL_CONTEXT_PROFILE_CORE)
 
         self.keys = pg.key.get_pressed()
+        self.rel = pg.mouse.get_rel()
 
         # Create Window
         pg.display.set_mode((width, height), pg.OPENGL | pg.DOUBLEBUF)
@@ -39,6 +40,7 @@ class Window:
 
     def dispatchEvent(self, handler: WindowEventHandler):
         self.keys = pg.key.get_pressed()
+        self.rel = pg.mouse.get_rel()
         for event in pg.event.get():
             if event.type == pg.QUIT:
                 self.isRunning = False

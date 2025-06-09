@@ -13,7 +13,7 @@ from GameObjectSystem import *
 class Player(GameObject):
     def __init__(self, shader: glShaderProgram):
         self.shader = shader
-        super().__init__()
+        super().__init__(self)
 
     def OnStart(self):
         self.model = Model("res/M.glb", self.shader)
@@ -31,6 +31,7 @@ class Player(GameObject):
         AnimationSystem.AddAnimation(self.animator)
 
         self.running: bool = False
+        self.runningDir = glm.vec3(0)
 
         def startPlayBack(animator: Animator):
             return self.running
@@ -45,6 +46,12 @@ class Player(GameObject):
         keys = window.keys
 
         self.running = keys[pg.K_k]
+        newDir = glm.vec3(keys[pg.K_a] - keys[pg.K_d], 0, keys[pg.K_w] - keys[pg.K_s])
+        if newDir != glm.vec3(0):
+            self.runningDir = newDir
+            self.model.transform.rotation = glm.angleAxis(glm.atan(self.runningDir[0], self.runningDir[2]), glm.vec3(0, 1, 0))
+
+        cam = GameObjectSystem.gameObjects[0].inher
 
 class Game(Application):
     def __init__(self):
@@ -128,10 +135,7 @@ class Game(Application):
                 """)
         # self.wallpaper = glTexture.loadTexture('res/GreenGrass.png', GL_NEAREST)
 
-        aspect = self.window.width / self.window.height
-        self.cam = Camera(glm.vec3(0.0, 1.0, 3.0))
-        self.cam.calOrthogonalMat(OrthogonalCameraState(-1, 1, -1 / aspect, 1 / aspect, 0.1, 100))
-        self.cam.calPerspectiveMat(PerspectiveCameraState(glm.radians(45), aspect, 0.1, 100))
+        self.cam = Camera(glm.vec3(0.0, 1.0, 3.0), self.window)
 
         print(f'GL_MAX_UNIFORM_BLOCK_SIZE: {glGetIntegerv(GL_MAX_UNIFORM_BLOCK_SIZE)}')
 
@@ -236,25 +240,6 @@ class Game(Application):
             pg.event.set_grab(self.lockCursor)
             pg.mouse.set_visible(not self.lockCursor)
 
-    def OnWindowMouseMotion(self, pos: tuple[int, int], rel: tuple[int, int], button: tuple[bool, bool, bool], touch: bool):
-        sensitivity = 0.003
-
-        dx, dy = rel[0], rel[1]
-
-        yaw_angle = -dx * sensitivity
-        pitch_angle = -dy * sensitivity
-
-        new_pitch = self.cam.pitch + pitch_angle
-        new_pitch = max(-self.cam.max_pitch, min(self.cam.max_pitch, new_pitch))
-        pitch_angle = new_pitch - self.cam.pitch
-        self.cam.pitch = new_pitch
-
-        yaw_quat   = glm.angleAxis(yaw_angle, glm.vec3(0, 1, 0))
-        pitch_quat = glm.angleAxis(pitch_angle, self.cam.right())
-
-        delta_rotation = yaw_quat * pitch_quat
-        self.cam.rotation = glm.normalize(delta_rotation * self.cam.rotation)
-
     def OnWindowClose(self):
         self.renderer.delete()
         self.postProcessingPass.delete()
@@ -289,22 +274,6 @@ class Game(Application):
         glViewport(0, 0, self.window.width, self.window.height)
         self.postProcessingPass.unbind()
         self.postProcessingPass.render()
-
-        keys = self.window.keys
-
-        dir = glm.vec3(0, 0, 0)
-        if keys[pg.K_w]:
-            dir += self.cam.forward()
-        if keys[pg.K_s]:
-            dir -= self.cam.forward()
-        if keys[pg.K_d]:
-            dir += self.cam.right()
-        if keys[pg.K_a]:
-            dir -= self.cam.right()
-        if keys[pg.K_SPACE]:
-            dir += glm.vec3(0, 1, 0)
-        if dir != glm.vec3(0):
-            self.cam.position += 2 * glm.normalize(dir) / self.window.fps
 
         if self.lockCursor:
             pg.mouse.set_pos((self.window.width / 2, self.window.height / 2))
