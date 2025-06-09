@@ -25,8 +25,8 @@ class Player(GameObject):
         # self.model = Model("res/Monkey.glb", shader)
 
         self.animator = Animator(self.model)
-        self.animator.setDefaultState('Idle')
-        self.animator.addAnimationState('FastRunning')
+        self.animator.setDefaultState("Idle")
+        self.animator.addAnimationState("FastRunning")
 
         AnimationSystem.AddAnimation(self.animator)
 
@@ -38,8 +38,8 @@ class Player(GameObject):
         def endPlayBack(animator: Animator):
             return not self.running
 
-        self.animator.addTransition('Idle', 'FastRunning', 0.12, startPlayBack)
-        self.animator.addTransition('FastRunning', 'Idle', 0.14, endPlayBack)
+        self.animator.addTransition("Idle", "FastRunning", 0.12, startPlayBack)
+        self.animator.addTransition("FastRunning", "Idle", 0.14, endPlayBack)
 
     def OnUpdate(self, window: Window):
         keys = window.keys
@@ -230,13 +230,13 @@ class Game(Application):
         pg.mouse.set_pos((self.window.width / 2, self.window.height / 2))
         pg.mouse.get_rel()
 
-    def onWindowKeyAction(self, key: int, type: int, mod: int, unicode: int, scancode: int):
+    def OnWindowKeyAction(self, key: int, type: int, mod: int, unicode: int, scancode: int):
         if key == pg.K_ESCAPE and type == pg.KEYDOWN:
             self.lockCursor = not self.lockCursor
             pg.event.set_grab(self.lockCursor)
             pg.mouse.set_visible(not self.lockCursor)
 
-    def onWindowMouseMotion(self, pos: tuple[int, int], rel: tuple[int, int], button: tuple[bool, bool, bool], touch: bool):
+    def OnWindowMouseMotion(self, pos: tuple[int, int], rel: tuple[int, int], button: tuple[bool, bool, bool], touch: bool):
         sensitivity = 0.003
 
         dx, dy = rel[0], rel[1]
@@ -255,13 +255,13 @@ class Game(Application):
         delta_rotation = yaw_quat * pitch_quat
         self.cam.rotation = glm.normalize(delta_rotation * self.cam.rotation)
 
-    def onWindowClose(self):
+    def OnWindowClose(self):
         self.renderer.delete()
         self.postProcessingPass.delete()
         self.player.model.delete()
         print('Close from Game')
 
-    def onUpdate(self):
+    def OnUpdate(self):
         self.window.dispatchEvent(self.eventHandler)
 
         AnimationSystem.Update(self.window.deltaTime)
@@ -305,7 +305,7 @@ class Game(Application):
             dir += glm.vec3(0, 1, 0)
         if dir != glm.vec3(0):
             self.cam.position += 2 * glm.normalize(dir) / self.window.fps
-        
+
         if self.lockCursor:
             pg.mouse.set_pos((self.window.width / 2, self.window.height / 2))
 
