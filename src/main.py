@@ -168,11 +168,15 @@ class Game(Application):
                     factor = 0;
                 }
 
+                vec3 finalColor = vec3(1.0);
                 if (!hasDiffuseTex) {
-                    FragColor = vec4(color * factor, 1);
-                    return;
+                    finalColor = color;
                 }
-                FragColor = vec4(texture(diffuseTexture, uv).rgb * factor, 1);
+                else {
+                    finalColor = texture(diffuseTexture, uv).rgb;
+                }
+                finalColor *= (normal + 1.0) * 0.5;
+                FragColor = vec4(finalColor * factor, 1);
             }
             """
             )
