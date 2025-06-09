@@ -108,6 +108,7 @@ class Game(Application):
 
             uniform mat4 vp;
             uniform mat4 model;
+            uniform mat4 inverseModel;
 
             uniform mat4 jointMatrices[100];
 
@@ -131,7 +132,7 @@ class Game(Application):
                 gl_Position = vp * fullTransform * vec4(aPos, 1.0);
                 fragPos = vec3(model * vec4(aPos, 1.0));
                 // normal = normalize(transpose(inverse(mat3(model * skinMatrix))) * aNormal);
-                normal = normalize(transpose(inverse(mat3(model))) * mat3(skinMatrix) * aNormal);
+                normal = normalize(mat3(inverseModel) * mat3(skinMatrix) * aNormal);
                 uv = aUV;
             }
             """,
@@ -202,8 +203,8 @@ class Game(Application):
             return state.duration - state.time <= 0.1
 
         self.kickEvent = KickEvent()
-        self.animator.addTransition('Idle', 'FastRunning', 0.1, startPlayBack)
-        self.animator.addTransition('FastRunning', 'Idle', 0.1, endPlayBack)
+        self.animator.addTransition('Idle', 'FastRunning', 0.17, startPlayBack)
+        self.animator.addTransition('FastRunning', 'Idle', 0.16, endPlayBack)
 
         glClearColor(0.1, 0.1, 0.1, 1)
 

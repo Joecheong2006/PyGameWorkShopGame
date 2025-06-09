@@ -195,6 +195,7 @@ class Model:
         self.nodes = gltf.nodes
 
         self.modelMats = {}
+        self.modelInverseMats = {}
 
         for node in self.nodes:
             if node.mesh is None:
@@ -210,6 +211,7 @@ class Model:
             if node.scale is not None:
                 S = glm.scale(glm.mat4(1.0), glm.vec3(node.scale))
             self.modelMats[node.mesh] = glm.mat4(T * R * S)
+            self.modelInverseMats[node.mesh] = glm.transpose(glm.inverse(self.modelMats[node.mesh]))
 
         self.materials = init_materials(gltf, self.layout)
 
@@ -268,6 +270,8 @@ class Model:
             glUniform3f(glGetUniformLocation(self.shader.program, "color"), *self.materials[i].baseColor)
             model = self.modelMats[entry.meshIndex]
             glUniformMatrix4fv(glGetUniformLocation(self.shader.program, "model"), 1, GL_FALSE, model.to_list())
+            inverseModel = self.modelInverseMats[entry.meshIndex]
+            glUniformMatrix4fv(glGetUniformLocation(self.shader.program, "inverseModel"), 1, GL_FALSE, inverseModel.to_list())
 
             glUniform1i(glGetUniformLocation(self.shader.program, "hasDiffuseTex"), self.materials[i].hasDiffuseTex)
             if self.materials[i].hasDiffuseTex:
