@@ -249,15 +249,13 @@ class Game(Application):
     def onUpdate(self):
         self.window.dispatchEvent(self.eventHandler)
 
-        # Render triangle to framebuffer
-        self.postProcessingPass.bind()
-        glClearColor(0.1, 0.1, 0.1, 1.0)
-
-        t = pg.time.get_ticks() * 0.001
+        self.player.animator.playAnimation(self.window.deltaTime)
 
         self.player.update(self.window)
 
-        self.player.animator.playAnimation(self.window.deltaTime)
+        # Render triangle to framebuffer
+        self.postProcessingPass.bind()
+        glClearColor(0.1, 0.1, 0.1, 1.0)
 
         previous_time = pg.time.get_ticks()
         self.player.model.render(self.cam)
