@@ -7,6 +7,8 @@ from Animator import Animator
 from RenderPipeline import PostProcessingPass
 from Camera import *
 
+from AnimationSystem import AnimationSystem
+
 class Player:
     def __init__(self, shader: glShaderProgram):
         self.model = Model("res/M.glb", shader)
@@ -20,6 +22,8 @@ class Player:
         self.animator = Animator(self.model)
         self.animator.setDefaultState('Idle')
         self.animator.addAnimationState('FastRunning')
+
+        AnimationSystem.AddAnimation(self.animator)
 
         self.running: bool = False
 
@@ -39,6 +43,7 @@ class Player:
 
 class Game(Application):
     def __init__(self):
+        AnimationSystem.SetUp()
         scale = (4, 4)
         PIXEL_WIDTH, PIXEL_HEIGHT = 320, 180
         # scale = (1, 1)
@@ -46,6 +51,7 @@ class Game(Application):
 
         WINDOW_SIZE = (PIXEL_WIDTH * scale[0], PIXEL_HEIGHT * scale[1])
 
+        # Initalize Context
         super().__init__(WINDOW_SIZE)
 
         glEnable(GL_DEPTH_TEST)
@@ -53,6 +59,9 @@ class Game(Application):
 
         glEnable(GL_BLEND)
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+
+        # Initialize Systems
+        AnimationSystem.SetUp()
 
         postProcessingShader = glShaderProgram(
                 """
@@ -249,7 +258,7 @@ class Game(Application):
     def onUpdate(self):
         self.window.dispatchEvent(self.eventHandler)
 
-        self.player.animator.playAnimation(self.window.deltaTime)
+        AnimationSystem.Update(self.window.deltaTime)
 
         self.player.update(self.window)
 
