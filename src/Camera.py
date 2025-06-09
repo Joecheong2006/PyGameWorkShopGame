@@ -26,9 +26,6 @@ class Camera(GameObject):
 
         self.state = None
 
-        self.calOrthogonalMat(OrthogonalCameraState(-1, 1, -1 / self.aspect, 1 / self.aspect, 0.1, 100))
-        self.calPerspectiveMat(PerspectiveCameraState(glm.radians(45), self.aspect, 0.1, 100))
-
     def forward(self):
         return self.rotation * glm.vec3(0, 0, -1)
 
