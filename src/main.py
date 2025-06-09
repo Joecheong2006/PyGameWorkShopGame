@@ -7,13 +7,6 @@ from Animator import Animator
 from RenderPipeline import PostProcessingPass
 from Camera import *
 
-class KickEvent:
-    def __init__(self):
-        self.action = False
-
-    def startEvent(self, animator):
-        return self.action
-
 class Game(Application):
     def __init__(self):
         scale = (4, 4)
@@ -198,11 +191,7 @@ class Game(Application):
 
         def endPlayBack(animator: Animator):
             return not self.window.keys[pg.K_k]
-            state = animator.animationStates['FastRunning']
-            return state.finished
-            return state.duration - state.time <= 0.1
 
-        self.kickEvent = KickEvent()
         self.animator.addTransition('Idle', 'FastRunning', 0.17, startPlayBack)
         self.animator.addTransition('FastRunning', 'Idle', 0.16, endPlayBack)
 
@@ -278,8 +267,6 @@ class Game(Application):
         self.postProcessingPass.render()
 
         keys = self.window.keys
-
-        self.kickEvent.action = keys[pg.K_k]
 
         dir = glm.vec3(0, 0, 0)
         if keys[pg.K_w]:
