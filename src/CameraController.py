@@ -1,3 +1,4 @@
+import pygame as pg
 from Camera import *
 from GameObjectSystem import GameObjectSystem
 

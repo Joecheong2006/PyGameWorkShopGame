@@ -1,4 +1,3 @@
-import pygame as pg
 from pyglm import glm
 import math
 
