@@ -192,9 +192,14 @@ class Game(Application):
         self.animator.setDefaultState('Idle')
         self.animator.addAnimationState('FastRunning', loop=False)
 
+        def endPlayBack(animator: Animator):
+            state = animator.animationStates['FastRunning']
+            return state.finished
+            return state.duration - state.time <= 0.1
+
         self.kickEvent = KickEvent()
         self.animator.addTransition('Idle', 'FastRunning', 0.1, self.kickEvent.startEvent)
-        self.animator.addTransition('FastRunning', 'Idle', 0.1)
+        self.animator.addTransition('FastRunning', 'Idle', 0.1, endPlayBack)
 
         glClearColor(0.1, 0.1, 0.1, 1)
 

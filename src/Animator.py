@@ -6,7 +6,6 @@ class AnimationState:
     def __init__(self, anim, animName: str, timeScale: float, loop: bool):
         self.animName: str = animName
         self.anim = anim
-        # self.duration: float = self.anim.duration[0] if self.anim else 0
         self.duration: float = self.anim.duration[0] if self.anim else 0
         self.time: float = 0
         self.timeScale: float = timeScale
@@ -56,7 +55,7 @@ class Animator:
         self.isTransitioning: bool = False
         self.transitionIndex: int = -1
 
-    def addTransition(self, startAnimName: str, endAnimName: str, duration: float, event = None, offset: float = 0):
+    def addTransition(self, startAnimName: str, endAnimName: str, duration: float, event = lambda : False, offset: float = 0):
         self.transitions.append(AnimationTransition(startAnimName, endAnimName, duration, event, offset))
 
     def addAnimationState(self, animName: str, timeScale: float = 1, loop = True):
@@ -155,13 +154,6 @@ class AnimationTransition:
         self.durationInverse: float = 1.0 / duration
         self.offset = glm.clamp(offset, 0, 1)
         self.event = event
-        if self.event == None:
-            def endPlayBack(animator: Animator):
-                state = animator.animationStates[self.startAnimName]
-                return state.duration - state.time <= self.duration
-                return state.finished
-            self.event = endPlayBack
-
         self.currentDuration: float = 0
 
     def apply(self, deltaTime: float, animator: Animator) -> bool:
