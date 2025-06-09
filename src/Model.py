@@ -13,6 +13,8 @@ AnimationChannel = namedtuple('AnimationChannel', 'sampler node path')
 Animation = namedtuple('Animation', 'name samplers channels duration')
 Skin = namedtuple('Skin', 'joints inverse_bind_matrices')
 
+Transform = namedtuple('Transform', 'position scale rotation')
+
 class Material:
     def __init__(self):
         self.baseColor = [1, 1, 1]
@@ -184,6 +186,9 @@ def load_animations(gltf):
 
 class Model:
     def __init__(self, path: str, shader: glShaderProgram):
+        self.transform = Transform(glm.vec3(0.0), glm.vec3(1), glm.quat(0, 0, 0, 0))
+        self.transformMat = glm.translate(glm.mat4(1.0), glm.vec3(self.transform.position)) * glm.mat4_cast(self.transform.rotation) * glm.scale(glm.mat4(1.0), self.transform.scale)
+
         self.shader = shader
         gltf = pygltflib.GLTF2().load(path)
         if gltf == None:
@@ -195,7 +200,6 @@ class Model:
         self.nodes = gltf.nodes
 
         self.modelMats = {}
-        self.modelInverseMats = {}
 
         for node in self.nodes:
             if node.mesh is None:
@@ -211,7 +215,6 @@ class Model:
             if node.scale is not None:
                 S = glm.scale(glm.mat4(1.0), glm.vec3(node.scale))
             self.modelMats[node.mesh] = glm.mat4(T * R * S)
-            self.modelInverseMats[node.mesh] = glm.transpose(glm.inverse(self.modelMats[node.mesh]))
 
         self.materials = init_materials(gltf, self.layout)
 
@@ -268,9 +271,9 @@ class Model:
         glBindVertexArray(self.vao)
         for i, entry in enumerate(self.layout):
             glUniform3f(glGetUniformLocation(self.shader.program, "color"), *self.materials[i].baseColor)
-            model = self.modelMats[entry.meshIndex]
+            model = self.modelMats[entry.meshIndex] * self.transformMat
             glUniformMatrix4fv(glGetUniformLocation(self.shader.program, "model"), 1, GL_FALSE, model.to_list())
-            inverseModel = self.modelInverseMats[entry.meshIndex]
+            inverseModel = glm.transpose(glm.inverse(model))
             glUniformMatrix4fv(glGetUniformLocation(self.shader.program, "inverseModel"), 1, GL_FALSE, inverseModel.to_list())
 
             glUniform1i(glGetUniformLocation(self.shader.program, "hasDiffuseTex"), self.materials[i].hasDiffuseTex)

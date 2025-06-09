@@ -176,7 +176,7 @@ class Game(Application):
                 else {
                     finalColor = texture(diffuseTexture, uv).rgb;
                 }
-                finalColor *= (normal + 1.0) * 0.5;
+                finalColor *= (N + 1.0) * 0.5;
                 FragColor = vec4(finalColor * factor, 1);
             }
             """
