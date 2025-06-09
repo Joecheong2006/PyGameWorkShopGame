@@ -185,12 +185,12 @@ class Game(Application):
         # self.model = Model("res/Ronin.glb", shader)
         # self.model = Model("res/Monkey.glb", shader)
         self.animator = Animator(self.model)
-        self.animator.setDefaultState(0)
-        self.animator.addAnimationState(1, loop=False)
+        self.animator.setDefaultState('Idle')
+        self.animator.addAnimationState('FastRunning', loop=False)
 
         self.kickEvent = KickEvent()
-        self.animator.addTransition(0, 1, 0.2, self.kickEvent.startEvent)
-        self.animator.addTransition(1, 0, 0.2)
+        self.animator.addTransition('Idle', 'FastRunning', 0.1, self.kickEvent.startEvent)
+        self.animator.addTransition('FastRunning', 'Idle', 0.1)
 
         glClearColor(0.1, 0.1, 0.1, 1)
 

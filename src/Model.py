@@ -128,10 +128,12 @@ def load_mesh_data(gltf) -> MeshData:
 
 def load_animations(gltf):
     if len(gltf.animations) == 0:
-        return [], None, None
+        return {}, [], None, None
+
+    animNameIndexMap: dict[str, int] = {}
 
     animations = []
-    for anim in gltf.animations:
+    for i, anim in enumerate(gltf.animations):
         samplers = []
         channels = []
         duration = 0
@@ -144,6 +146,7 @@ def load_animations(gltf):
         for chnl in anim.channels:
             channels.append(AnimationChannel(chnl.sampler, chnl.target.node, chnl.target.path))
         
+        animNameIndexMap[anim.name] = i
         a = Animation(anim.name, samplers, channels, duration)
         animations.append(a)
 
@@ -177,7 +180,7 @@ def load_animations(gltf):
     root = gltf.nodes[ordered_node_indexes[0]]
     if root.mesh is None and root.rotation is not None:
         root.rotation = [root.rotation[3], root.rotation[0], root.rotation[1], root.rotation[2]]
-    return animations, skins, ordered_node_indexes
+    return animNameIndexMap, animations, skins, ordered_node_indexes
 
 class Model:
     def __init__(self, path: str, shader: glShaderProgram):
@@ -188,7 +191,7 @@ class Model:
 
         meshData = load_mesh_data(gltf)
         self.layout = meshData.primitivesLayout
-        self.animations, self.skins, self.ordered_node_indexes = load_animations(gltf)
+        self.animNameIndexMap, self.animations, self.skins, self.ordered_node_indexes = load_animations(gltf)
         self.nodes = gltf.nodes
 
         self.modelMats = {}

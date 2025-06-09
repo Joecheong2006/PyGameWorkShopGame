@@ -3,8 +3,8 @@ from pyglm import glm
 import numpy as np
 
 class AnimationState:
-    def __init__(self, anim, animIndex, timeScale, loop):
-        self.animIndex: int = animIndex
+    def __init__(self, anim, animName: str, timeScale: float, loop: bool):
+        self.animName: str = animName
         self.anim = anim
         # self.duration: float = self.anim.duration[0] if self.anim else 0
         self.duration: float = self.anim.duration[0] if self.anim else 0
@@ -50,20 +50,22 @@ class Animator:
         self.target: Model = model
 
         self.currentState: AnimationState | None = None
-        self.animationStates: list[AnimationState] = [AnimationState(None, -1, 0, 0)]
+        self.animationStates: dict[str, AnimationState] = {}
         self.transitions: list[AnimationTransition] = []
 
         self.isTransitioning: bool = False
         self.transitionIndex: int = -1
 
-    def addTransition(self, startAnimIndex, endAnimIndex, duration: float, event = None, offset: float = 0):
-        self.transitions.append(AnimationTransition(startAnimIndex, endAnimIndex, duration, event, offset))
+    def addTransition(self, startAnimName: str, endAnimName: str, duration: float, event = None, offset: float = 0):
+        self.transitions.append(AnimationTransition(startAnimName, endAnimName, duration, event, offset))
 
-    def addAnimationState(self, animIndex: int, timeScale: float = 1, loop = True):
-        self.animationStates.append(AnimationState(self.target.animations[animIndex], animIndex, timeScale, loop))
+    def addAnimationState(self, animName: str, timeScale: float = 1, loop = True):
+        animIndex = self.target.animNameIndexMap[animName]
+        self.animationStates[animName] = AnimationState(self.target.animations[animIndex], animName, timeScale, loop)
 
-    def setDefaultState(self, animIndex: int, timeScale: float = 1, loop = True):
-        self.currentState = self.animationStates[0] = AnimationState(self.target.animations[animIndex], animIndex, timeScale, loop)
+    def setDefaultState(self, animName: str, timeScale: float = 1, loop = True):
+        animIndex = self.target.animNameIndexMap[animName]
+        self.currentState = self.animationStates[animName] = AnimationState(self.target.animations[animIndex], animName, timeScale, loop)
     
     def playAnimation(self, deltaTime: float):
         if self.currentState == None:
@@ -74,10 +76,10 @@ class Animator:
 
         if not self.isTransitioning:
             for i, transition in enumerate(self.transitions):
-                if self.currentState.animIndex == transition.startAnimIndex and transition.event(self):
+                if self.currentState.animName == transition.startAnimName and transition.event(self):
                     self.isTransitioning = True
                     self.transitionIndex = i
-                    self.animationStates[transition.endAnimIndex].reset()
+                    self.animationStates[transition.endAnimName].reset()
 
         if self.isTransitioning:
             transition = self.transitions[self.transitionIndex]
@@ -85,7 +87,7 @@ class Animator:
                 self.currentState.reset()
                 self.isTransitioning = False
                 self.transitionIndex = -1
-                self.currentState = self.animationStates[transition.endAnimIndex]
+                self.currentState = self.animationStates[transition.endAnimName]
                 transition.reset()
 
         for node in self.target.nodes:
@@ -146,16 +148,16 @@ def get_lerp(t, keyframe_times):
     return 0, 0, 0
 
 class AnimationTransition:
-    def __init__(self, startAnimIndex: int, endAnimIndex: int, duration: float, event, offset: float):
-        self.startAnimIndex: int = startAnimIndex
-        self.endAnimIndex: int = endAnimIndex
+    def __init__(self, startAnimName: str, endAnimName: str, duration: float, event, offset: float):
+        self.startAnimName: str = startAnimName
+        self.endAnimName: str = endAnimName
         self.duration = duration
         self.durationInverse: float = 1.0 / duration
         self.offset = glm.clamp(offset, 0, 1)
         self.event = event
         if self.event == None:
             def endPlayBack(animator: Animator):
-                state = animator.animationStates[self.startAnimIndex]
+                state = animator.animationStates[self.startAnimName]
                 return state.duration - state.time <= self.duration
                 return state.finished
             self.event = endPlayBack
@@ -164,8 +166,8 @@ class AnimationTransition:
 
     def apply(self, deltaTime: float, animator: Animator) -> bool:
         states = animator.animationStates
-        assert self.endAnimIndex < len(states)
-        endAnimState = states[self.endAnimIndex]
+        # assert self.endAnimName < len(states)
+        endAnimState = states[self.endAnimName]
         endAnim = endAnimState.anim
 
         for channel in endAnim.channels:
