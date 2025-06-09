@@ -7,6 +7,36 @@ from Animator import Animator
 from RenderPipeline import PostProcessingPass
 from Camera import *
 
+class Player:
+    def __init__(self, shader: glShaderProgram):
+        self.model = Model("res/M.glb", shader)
+        # self.model = Model("res/Kick.glb", shader)
+        # self.model = Model("res/Capoeira.glb", shader)
+        # self.model = Model("res/AlienSoldier.glb", shader)
+        # self.model = Model("res/TestScene2.glb", shader)
+        # self.model = Model("res/Ronin.glb", shader)
+        # self.model = Model("res/Monkey.glb", shader)
+
+        self.animator = Animator(self.model)
+        self.animator.setDefaultState('Idle')
+        self.animator.addAnimationState('FastRunning')
+
+        self.running: bool = False
+
+        def startPlayBack(animator: Animator):
+            return self.running
+
+        def endPlayBack(animator: Animator):
+            return not self.running
+
+        self.animator.addTransition('Idle', 'FastRunning', 0.12, startPlayBack)
+        self.animator.addTransition('FastRunning', 'Idle', 0.14, endPlayBack)
+
+    def update(self, window: Window):
+        keys = window.keys
+
+        self.running = keys[pg.K_k]
+
 class Game(Application):
     def __init__(self):
         scale = (4, 4)
@@ -175,25 +205,7 @@ class Game(Application):
             """
             )
 
-        self.model = Model("res/M.glb", shader)
-        # self.model = Model("res/Kick.glb", shader)
-        # self.model = Model("res/Capoeira.glb", shader)
-        # self.model = Model("res/AlienSoldier.glb", shader)
-        # self.model = Model("res/TestScene2.glb", shader)
-        # self.model = Model("res/Ronin.glb", shader)
-        # self.model = Model("res/Monkey.glb", shader)
-        self.animator = Animator(self.model)
-        self.animator.setDefaultState('Idle')
-        self.animator.addAnimationState('FastRunning')
-
-        def startPlayBack(animator: Animator):
-            return self.window.keys[pg.K_k]
-
-        def endPlayBack(animator: Animator):
-            return not self.window.keys[pg.K_k]
-
-        self.animator.addTransition('Idle', 'FastRunning', 0.17, startPlayBack)
-        self.animator.addTransition('FastRunning', 'Idle', 0.16, endPlayBack)
+        self.player = Player(shader)
 
         glClearColor(0.1, 0.1, 0.1, 1)
 
@@ -231,7 +243,7 @@ class Game(Application):
     def onWindowClose(self):
         self.renderer.delete()
         self.postProcessingPass.delete()
-        self.model.delete()
+        self.player.model.delete()
         print('Close from Game')
 
     def onUpdate(self):
@@ -243,12 +255,12 @@ class Game(Application):
 
         t = pg.time.get_ticks() * 0.001
 
-        m = self.cam.projectionMat * self.cam.getViewMatrix()
+        self.player.update(self.window)
 
-        self.animator.playAnimation(self.window.deltaTime)
+        self.player.animator.playAnimation(self.window.deltaTime)
 
         previous_time = pg.time.get_ticks()
-        self.model.render(self.cam)
+        self.player.model.render(self.cam)
         delta_time: float = (pg.time.get_ticks() - previous_time)
         pg.display.set_caption(f'{delta_time}')
 
