@@ -2,7 +2,7 @@ import pygame as pg
 from pyglm import glm
 import math
 
-from GameObjectSystem import GameObject
+from GameObject import GameObject
 from Window import Window
 
 from collections import namedtuple
@@ -28,42 +28,6 @@ class Camera(GameObject):
 
         self.calOrthogonalMat(OrthogonalCameraState(-1, 1, -1 / self.aspect, 1 / self.aspect, 0.1, 100))
         self.calPerspectiveMat(PerspectiveCameraState(glm.radians(45), self.aspect, 0.1, 100))
-
-    def OnUpdate(self, window: Window):
-        sensitivity = 0.003
-
-        dx, dy = window.rel[0], window.rel[1]
-
-        yaw_angle = -dx * sensitivity
-        pitch_angle = -dy * sensitivity
-
-        new_pitch = self.pitch + pitch_angle
-        new_pitch = max(-self.max_pitch, min(self.max_pitch, new_pitch))
-        pitch_angle = new_pitch - self.pitch
-        self.pitch = new_pitch
-
-        yaw_quat   = glm.angleAxis(yaw_angle, glm.vec3(0, 1, 0))
-        pitch_quat = glm.angleAxis(pitch_angle, self.right())
-
-        delta_rotation = yaw_quat * pitch_quat
-        self.rotation = glm.normalize(delta_rotation * self.rotation)
-
-        keys = window.keys
-
-        dir = glm.vec3(0, 0, 0)
-        if keys[pg.K_w]:
-            dir += self.forward()
-        if keys[pg.K_s]:
-            dir -= self.forward()
-        if keys[pg.K_d]:
-            dir += self.right()
-        if keys[pg.K_a]:
-            dir -= self.right()
-        if keys[pg.K_SPACE]:
-            dir += glm.vec3(0, 1, 0)
-        if dir != glm.vec3(0):
-            self.position += 2 * glm.normalize(dir) * window.deltaTime
-
 
     def forward(self):
         return self.rotation * glm.vec3(0, 0, -1)
