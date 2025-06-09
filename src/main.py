@@ -6,6 +6,7 @@ from Model import Model
 from Animator import Animator
 from RenderPipeline import PostProcessingPass
 from Camera import *
+from CameraController import *
 
 from AnimationSystem import AnimationSystem
 from GameObjectSystem import *
@@ -135,6 +136,7 @@ class Game(Application):
         # self.wallpaper = glTexture.loadTexture('res/GreenGrass.png', GL_NEAREST)
 
         self.cam = Camera(glm.vec3(0.0, 1.0, 3.0), self.window)
+        CameraController()
 
         print(f'GL_MAX_UNIFORM_BLOCK_SIZE: {glGetIntegerv(GL_MAX_UNIFORM_BLOCK_SIZE)}')
 
