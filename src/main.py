@@ -12,7 +12,11 @@ from GameObjectSystem import *
 
 class Player(GameObject):
     def __init__(self, shader: glShaderProgram):
-        self.model = Model("res/M.glb", shader)
+        self.shader = shader
+        super().__init__()
+
+    def OnStart(self):
+        self.model = Model("res/M.glb", self.shader)
         # self.model = Model("res/Kick.glb", shader)
         # self.model = Model("res/Capoeira.glb", shader)
         # self.model = Model("res/AlienSoldier.glb", shader)
@@ -36,8 +40,6 @@ class Player(GameObject):
 
         self.animator.addTransition('Idle', 'FastRunning', 0.12, startPlayBack)
         self.animator.addTransition('FastRunning', 'Idle', 0.14, endPlayBack)
-
-        super().__init__()
 
     def OnUpdate(self, window: Window):
         keys = window.keys
@@ -263,8 +265,6 @@ class Game(Application):
         self.window.dispatchEvent(self.eventHandler)
 
         AnimationSystem.Update(self.window.deltaTime)
-
-        # self.player.update(self.window)
         GameObjectSystem.Update(self.window)
 
         # Render triangle to framebuffer
