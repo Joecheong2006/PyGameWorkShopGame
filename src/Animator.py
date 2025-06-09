@@ -73,14 +73,9 @@ class Animator:
         self.currentState.calculateAnimation(self.target)
         self.currentState.update(deltaTime)
 
-        for i, transition in enumerate(self.transitions):
-            if not self.isTransitioning:
+        if not self.isTransitioning:
+            for i, transition in enumerate(self.transitions):
                 if self.currentState.animName == transition.startAnimName and transition.event(self):
-                    self.isTransitioning = True
-                    self.transitionIndex = i
-                    self.animationStates[transition.endAnimName].reset()
-            else:
-                if self.currentState.animName != transition.startAnimName and transition.event(self):
                     self.isTransitioning = True
                     self.transitionIndex = i
                     self.animationStates[transition.endAnimName].reset()
