@@ -1,18 +1,18 @@
-from Model import Model
+from Model import Model, Animation
 from pyglm import glm
 import numpy as np
 
 class AnimationState:
-    def __init__(self, anim, animName: str, timeScale: float, loop: bool):
+    def __init__(self, anim: Animation, animName: str, timeScale: float, loop: bool):
         self.animName: str = animName
-        self.anim = anim
+        self.anim: Animation = anim
         self.duration: float = self.anim.duration[0] if self.anim else 0
         self.time: float = 0
         self.timeScale: float = timeScale
         self.loop: bool = loop
         self.finished: bool = False
 
-    def calculateAnimation(self, target):
+    def calculateAnimation(self, target: Model):
         if self.anim == None:
             return
 
@@ -58,11 +58,11 @@ class Animator:
     def addTransition(self, startAnimName: str, endAnimName: str, duration: float, event = lambda : False, offset: float = 0):
         self.transitions.append(AnimationTransition(startAnimName, endAnimName, duration, event, offset))
 
-    def addAnimationState(self, animName: str, timeScale: float = 1, loop = True):
+    def addAnimationState(self, animName: str, timeScale: float = 1, loop: bool = True):
         animIndex = self.target.animNameIndexMap[animName]
         self.animationStates[animName] = AnimationState(self.target.animations[animIndex], animName, timeScale, loop)
 
-    def setDefaultState(self, animName: str, timeScale: float = 1, loop = True):
+    def setDefaultState(self, animName: str, timeScale: float = 1, loop: bool = True):
         animIndex = self.target.animNameIndexMap[animName]
         self.currentState = self.animationStates[animName] = AnimationState(self.target.animations[animIndex], animName, timeScale, loop)
     
@@ -100,7 +100,9 @@ class Animator:
 
         self.target.jointMatrices = calc_joint_matrices(self.target)
 
-def calc_joint_matrices(model):
+def calc_joint_matrices(model: Model):
+    if model.skins == None:
+        return []
     # assert len(model.skins) == 1
     for skin in model.skins:
         joint_matrices = []
@@ -124,7 +126,7 @@ def calc_local_transform(node):
     transform = translation @ rotation @ scale
     return np.array(transform)
 
-def interp_anim_vec(path, t, interpolation, keyframe_times, keyframe_values):
+def interp_anim_vec(path, t: float, interpolation, keyframe_times, keyframe_values):
     a,b,t = get_lerp(t, keyframe_times)
     a = glm.quat(keyframe_values[a, [3,0,1,2]]) if path == 'rotation' else glm.vec3(keyframe_values[a])
     b = glm.quat(keyframe_values[b, [3,0,1,2]]) if path == 'rotation' else glm.vec3(keyframe_values[b])
@@ -137,7 +139,7 @@ def interp_anim_vec(path, t, interpolation, keyframe_times, keyframe_values):
     assert False, 'bad interpolation'
 
 
-def get_lerp(t, keyframe_times):
+def get_lerp(t: float, keyframe_times):
     for i, (t0, t1) in enumerate(zip(np.append([0.0], keyframe_times[:-1]), keyframe_times)):
         t1 = float(t1)
         if t0 <= t < t1:
@@ -150,15 +152,14 @@ class AnimationTransition:
     def __init__(self, startAnimName: str, endAnimName: str, duration: float, event, offset: float):
         self.startAnimName: str = startAnimName
         self.endAnimName: str = endAnimName
-        self.duration = duration
+        self.duration: float = duration
         self.durationInverse: float = 1.0 / duration
-        self.offset = glm.clamp(offset, 0, 1)
+        self.offset: float = glm.clamp(offset, 0, 1)
         self.event = event
         self.currentDuration: float = 0
 
     def apply(self, deltaTime: float, animator: Animator) -> bool:
         states = animator.animationStates
-        # assert self.endAnimName < len(states)
         endAnimState = states[self.endAnimName]
         endAnim = endAnimState.anim
 

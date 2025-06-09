@@ -190,15 +190,19 @@ class Game(Application):
         # self.model = Model("res/Monkey.glb", shader)
         self.animator = Animator(self.model)
         self.animator.setDefaultState('Idle')
-        self.animator.addAnimationState('FastRunning', loop=False)
+        self.animator.addAnimationState('FastRunning')
+
+        def startPlayBack(animator: Animator):
+            return self.window.keys[pg.K_k]
 
         def endPlayBack(animator: Animator):
+            return not self.window.keys[pg.K_k]
             state = animator.animationStates['FastRunning']
             return state.finished
             return state.duration - state.time <= 0.1
 
         self.kickEvent = KickEvent()
-        self.animator.addTransition('Idle', 'FastRunning', 0.1, self.kickEvent.startEvent)
+        self.animator.addTransition('Idle', 'FastRunning', 0.1, startPlayBack)
         self.animator.addTransition('FastRunning', 'Idle', 0.1, endPlayBack)
 
         glClearColor(0.1, 0.1, 0.1, 1)
