@@ -8,8 +8,9 @@ from RenderPipeline import PostProcessingPass
 from Camera import *
 
 from AnimationSystem import AnimationSystem
+from GameObjectSystem import *
 
-class Player:
+class Player(GameObject):
     def __init__(self, shader: glShaderProgram):
         self.model = Model("res/M.glb", shader)
         # self.model = Model("res/Kick.glb", shader)
@@ -36,7 +37,9 @@ class Player:
         self.animator.addTransition('Idle', 'FastRunning', 0.12, startPlayBack)
         self.animator.addTransition('FastRunning', 'Idle', 0.14, endPlayBack)
 
-    def update(self, window: Window):
+        super().__init__()
+
+    def OnUpdate(self, window: Window):
         keys = window.keys
 
         self.running = keys[pg.K_k]
@@ -62,6 +65,7 @@ class Game(Application):
 
         # Initialize Systems
         AnimationSystem.SetUp()
+        GameObjectSystem.SetUp()
 
         postProcessingShader = glShaderProgram(
                 """
@@ -72,7 +76,7 @@ class Game(Application):
 
                 void main() {
                     TexCoord = aTexCoord;
-                    gl_Position = vec4(aPos, 0.0, 1.0);
+                    gl_Position = vec4(aPos, 0, 1.0);
                 }
                 """,
                 """
@@ -260,7 +264,8 @@ class Game(Application):
 
         AnimationSystem.Update(self.window.deltaTime)
 
-        self.player.update(self.window)
+        # self.player.update(self.window)
+        GameObjectSystem.Update(self.window)
 
         # Render triangle to framebuffer
         self.postProcessingPass.bind()
