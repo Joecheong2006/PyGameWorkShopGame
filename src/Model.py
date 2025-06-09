@@ -18,11 +18,9 @@ class Transform:
         self.position = glm.vec3(0)
         self.scale = glm.vec3(1.0)
         self.rotation = glm.quat(0, 0, 0, 0)
-        self.matrix = glm.mat4(1.0)
-        self.updateMatrix()
 
-    def updateMatrix(self):
-        self.matrix = glm.translate(glm.mat4(1.0), glm.vec3(self.position)) * glm.mat4_cast(self.rotation) * glm.scale(glm.mat4(1.0), self.scale)
+    def getMatrix(self):
+        return glm.translate(glm.mat4(1.0), glm.vec3(self.position)) * glm.mat4_cast(self.rotation) * glm.scale(glm.mat4(1.0), self.scale)
 
 class Material:
     def __init__(self):
@@ -272,7 +270,7 @@ class Model:
             glUniform1i(glGetUniformLocation(self.shader.program, "hasAnimation"), 1)
             glUniformMatrix4fv(glGetUniformLocation(self.shader.program, "jointMatrices"), len(self.jointMatrices), GL_TRUE, np.array(self.jointMatrices))
 
-        self.transform.updateMatrix()
+        transformMatrix = self.transform.getMatrix()
 
         import pygame as pg
         t = pg.time.get_ticks() * 0.001
@@ -281,7 +279,7 @@ class Model:
         glBindVertexArray(self.vao)
         for i, entry in enumerate(self.layout):
             glUniform3f(glGetUniformLocation(self.shader.program, "color"), *self.materials[i].baseColor)
-            model = self.modelMats[entry.meshIndex] * self.transform.matrix
+            model = self.modelMats[entry.meshIndex] * transformMatrix
             glUniformMatrix4fv(glGetUniformLocation(self.shader.program, "model"), 1, GL_FALSE, model.to_list())
             inverseModel = glm.transpose(glm.inverse(model))
             glUniformMatrix4fv(glGetUniformLocation(self.shader.program, "inverseModel"), 1, GL_FALSE, inverseModel.to_list())
