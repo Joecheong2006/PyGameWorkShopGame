@@ -3,7 +3,7 @@ from Application import *
 from opengl_util import *
 from QuadRenderer import *
 from Model import Model
-from Animator import Animator, AnimationState
+from Animator import Animator
 from RenderPipeline import PostProcessingPass
 from Camera import *
 
