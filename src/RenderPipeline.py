@@ -25,12 +25,14 @@ class PostProcessingPass:
         self._fb.unbind()
 
     def render(self):
-        glClear(int(GL_DEPTH_BUFFER_BIT))
+        glDisable(GL_DEPTH_TEST)
+        glClear(GL_COLOR_BUFFER_BIT)
         glUseProgram(self._fb.shader.program)
         glBindVertexArray(self._fb.quad_vao)
         self._screenTexture.bind(0)
         glUniform1i(glGetUniformLocation(self._fb.shader.program, "screenTexture"), 0)
         glDrawArrays(GL_TRIANGLES, 0, 6)
+        glEnable(GL_DEPTH_TEST)
 
     def delete(self):
         self._fb.delete()
