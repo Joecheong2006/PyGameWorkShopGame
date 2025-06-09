@@ -1,6 +1,7 @@
-from GameObject import *
+from Window import Window
 
 class GameObjectSystem:
+    from GameObject import GameObject
     gameObjects: list[GameObject]
     def __init__(self):
         raise RuntimeError("ScripSystem cannot be created!")

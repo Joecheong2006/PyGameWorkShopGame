@@ -1,10 +1,10 @@
 from Window import Window
-import GameObjectSystem as GOsys
 
 class GameObject:
     def __init__(self, inher):
+        from GameObjectSystem import GameObjectSystem
         self.inher = inher
-        GOsys.GameObjectSystem.AddGameObject(self)
+        GameObjectSystem.AddGameObject(self)
 
     def OnStart(self):
         pass
@@ -14,4 +14,3 @@ class GameObject:
 
     def OnDestroy(self):
         pass
-
