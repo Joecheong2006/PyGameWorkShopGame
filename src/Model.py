@@ -55,7 +55,6 @@ model_vert_shader = """
         mat4 fullTransform = model * skinMatrix;
         gl_Position = vp * fullTransform * vec4(aPos, 1.0);
         fragPos = vec3(model * vec4(aPos, 1.0));
-        // normal = normalize(transpose(inverse(mat3(model * skinMatrix))) * aNormal);
         normal = normalize(mat3(inverseModel) * mat3(skinMatrix) * aNormal);
         uv = aUV;
     }
@@ -79,9 +78,6 @@ model_frag_shader = """
 
     void main() {
         vec3 N = normal;
-        if (!gl_FrontFacing) {
-            N = -N;
-        }
 
         // vec3 lightPos = vec3(0, 2, 2);
         vec3 lightDir = normalize(lightPos - fragPos);
@@ -101,7 +97,7 @@ model_frag_shader = """
         else {
             finalColor = texture(diffuseTexture, uv).rgb;
         }
-        finalColor *= (N + 1.0) * 0.5;
+        // finalColor *= (N + 1.0) * 0.5;
         FragColor = vec4(finalColor * factor, 1);
     }
     """
