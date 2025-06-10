@@ -12,11 +12,11 @@ class Camera(GameObject):
     def __init__(self, position: glm.vec3, window: Window):
         super().__init__(self)
 
-        self.position = position
-        self.aspect = window.width / window.height
-        self.rotation = glm.quat(glm.vec3(0))
+        self.position: glm.vec3 = position
+        self.aspect: float = window.width / window.height
+        self.rotation: glm.quat = glm.quat(glm.vec3(0))
 
-        self.max_pitch = math.radians(89.0)
+        self.max_pitch: float = math.radians(89.0)
         self.pitch: float = 0.0
         self.yaw: float = 0.0
 
