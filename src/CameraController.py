@@ -31,5 +31,3 @@ class CameraController(GameObject):
 
         delta_rotation = yaw_quat * pitch_quat
         cam.rotation = glm.normalize(delta_rotation * cam.rotation)
-
-        keys = window.keys
