@@ -1,5 +1,6 @@
 import pygame as pg
 from Camera import *
+
 from GameObjectSystem import GameObjectSystem
 
 class CameraController(GameObject):
@@ -35,3 +36,5 @@ class CameraController(GameObject):
 
         delta_rotation = yaw_quat * pitch_quat
         cam.rotation = glm.normalize(delta_rotation * cam.rotation)
+
+        player: Player | None = GameObjectSystem.FindFirstObjectByType(Camera)
