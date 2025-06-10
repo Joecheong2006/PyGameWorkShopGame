@@ -15,7 +15,6 @@ class Player(GameObject):
     def __init__(self):
         super().__init__(self)
 
-    def OnStart(self):
         self.model = Model("res/M.glb")
         # self.model = Model("res/Kick.glb")
         # self.model = Model("res/Capoeira.glb")
@@ -42,6 +41,9 @@ class Player(GameObject):
         self.animator.addTransition("Idle", "FastRunning", 0.12, startPlayBack)
         self.animator.addTransition("FastRunning", "Idle", 0.14, endPlayBack)
 
+    def OnStart(self):
+        pass
+
     def OnUpdate(self, window: Window):
         keys = window.keys
 
@@ -51,7 +53,7 @@ class Player(GameObject):
             self.runningDir = newDir
             self.model.transform.rotation = glm.angleAxis(glm.atan(self.runningDir[0], self.runningDir[2]), glm.vec3(0, 1, 0))
 
-        cam = GameObjectSystem.gameObjects[0].inher
+        # cam = GameObjectSystem.gameObjects[0].inher
 
 class Game(Application):
     def __init__(self):
@@ -135,8 +137,8 @@ class Game(Application):
                 """)
         # self.wallpaper = glTexture.loadTexture('res/GreenGrass.png', GL_NEAREST)
 
-        self.cam = Camera(glm.vec3(0.0, 1.0, 3.0), self.window)
         CameraController()
+        self.cam = Camera(glm.vec3(0.0, 1.0, 3.0), self.window)
 
         print(f'GL_MAX_UNIFORM_BLOCK_SIZE: {glGetIntegerv(GL_MAX_UNIFORM_BLOCK_SIZE)}')
 

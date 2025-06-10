@@ -17,9 +17,15 @@ class GameObjectSystem:
     @staticmethod
     def AddGameObject(object: GameObject):
         GameObjectSystem.gameObjects.append(object)
-        GameObjectSystem.gameObjects[-1].OnStart()
+
 
     @staticmethod
     def Update(window: Window):
-        for object in GameObjectSystem.gameObjects:
+        objs = GameObjectSystem.gameObjects
+        for object in objs:
+            if not object.started:
+                object.OnStart()
+                object.started = True
+
+        for object in objs:
             object.OnUpdate(window)

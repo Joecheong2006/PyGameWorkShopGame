@@ -6,15 +6,15 @@ class CameraController(GameObject):
     def __init__(self):
         super().__init__(self)
 
-    def OnStart(self):
         self.sensitivity = 0.003
 
-        cam: Camera = GameObjectSystem.gameObjects[0].inher
+    def OnStart(self):
+        cam: Camera = GameObjectSystem.gameObjects[1].inher
         cam.calOrthogonalMat(OrthogonalCameraState(-1, 1, -1 / cam.aspect, 1 / cam.aspect, 0.1, 100))
         cam.calPerspectiveMat(PerspectiveCameraState(glm.radians(45), cam.aspect, 0.1, 100))
 
     def OnUpdate(self, window: Window):
-        cam: Camera = GameObjectSystem.gameObjects[0].inher
+        cam: Camera = GameObjectSystem.gameObjects[1].inher
 
         dx, dy = window.rel[0], window.rel[1]
 

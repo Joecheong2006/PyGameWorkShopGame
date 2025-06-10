@@ -10,20 +10,22 @@ OrthogonalCameraState = namedtuple('OrthogonalCameraState', 'left right bottom t
 
 class Camera(GameObject):
     def __init__(self, position: glm.vec3, window: Window):
-        self.position = position
-        self.aspect = window.width / window.height
         super().__init__(self)
 
-    def OnStart(self):
+        self.position = position
+        self.aspect = window.width / window.height
         self.rotation = glm.quat(glm.vec3(0))
 
         self.max_pitch = math.radians(89.0)
-        self.pitch = 0.0
-        self.yaw = 0.0
+        self.pitch: float = 0.0
+        self.yaw: float = 0.0
 
         self.projectionMat = glm.mat4(1.0)
 
         self.state = None
+
+    def OnStart(self):
+        pass
 
     def forward(self):
         return self.rotation * glm.vec3(0, 0, -1)
