@@ -30,7 +30,7 @@ class GameObjectSystem:
             object.OnUpdate(window)
 
     @staticmethod
-    def FindFirstObjectbyType(self, type):
+    def FindFirstObjectByType(type):
         objs = GameObjectSystem.gameObjects
         for object in objs:
             if isinstance(object.inher, type):
