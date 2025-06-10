@@ -5,6 +5,7 @@ from GameObject import GameObject
 from Model import Model
 from Animator import Animator
 from pyglm import glm
+from Camera import Camera
 
 class Player(GameObject):
     def __init__(self):
@@ -25,27 +26,56 @@ class Player(GameObject):
         AnimationSystem.AddAnimation(self.animator)
 
         self.running: bool = False
-        self.runningDir = glm.vec3(0)
 
         def startPlayBack(animator: Animator):
+            return glm.length(self.v) > 0.1
             return self.running
 
         def endPlayBack(animator: Animator):
-            return not self.running
+            return glm.length(self.v) <= 0.1
 
         self.animator.addTransition("Idle", "FastRunning", 0.12, startPlayBack)
         self.animator.addTransition("FastRunning", "Idle", 0.14, endPlayBack)
 
-    def OnStart(self):
-        pass
+        self.forward: glm.vec3 = glm.vec3(0, 0, 1)
+        self.right: glm.vec3 = glm.vec3(1, 0, 0)
+        self.up: glm.vec3 = glm.vec3(0, 1, 0)
+        self.transform = self.model.transform
+        self.model.transform.rotation = glm.angleAxis(glm.pi(), glm.vec3(0, 1, 0))
+        self.facingDir = glm.vec3(0)
+        self.v = glm.vec3(0)
+
+    def followCameraDirection(self, cam: Camera):
+        self.forward = -cam.forward()
+        self.forward[1] = 0
+        self.forward = glm.normalize(self.forward)
+        self.right = cam.right()
+        self.right[1] = 0
+        self.right = glm.normalize(self.right)
 
     def OnUpdate(self, window: Window):
+        deltaTime = window.deltaTime
         keys = window.keys
 
         self.running = keys[pg.K_k]
-        newDir = glm.vec3(keys[pg.K_a] - keys[pg.K_d], 0, keys[pg.K_w] - keys[pg.K_s])
-        if newDir != glm.vec3(0):
-            self.runningDir = newDir
-            self.model.transform.rotation = glm.angleAxis(glm.atan(self.runningDir[0], self.runningDir[2]), glm.vec3(0, 1, 0))
 
-        # cam = GameObjectSystem.gameObjects[0].inher
+        horizentalAxis = keys[pg.K_d] - keys[pg.K_a]
+        horizentalDir = horizentalAxis * self.right
+
+        verticalAxis = keys[pg.K_s] - keys[pg.K_w]
+        verticalDir = verticalAxis * self.forward
+
+        newMovementDir = horizentalDir + verticalDir
+
+        if newMovementDir == glm.vec3(0):
+            self.v = glm.lerp(self.v, glm.vec3(0), 40 * deltaTime)
+            self.facingDir = glm.vec3(0)
+            return
+
+        self.facingDir = glm.normalize(newMovementDir)
+
+        self.v = glm.lerp(self.v, self.facingDir * 40, 55 * deltaTime)
+
+        toRotation = glm.angleAxis(glm.atan(self.facingDir[0], self.facingDir[2]), glm.vec3(0, 1, 0))
+        self.transform.rotation = glm.slerp(self.transform.rotation, toRotation, 10 * deltaTime)
+        self.transform.position = glm.vec3(glm.lerp(self.transform.position, self.v * deltaTime + self.transform.position, 10 * deltaTime))
