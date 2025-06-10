@@ -34,5 +34,5 @@ class GameObjectSystem:
         objs = GameObjectSystem.objects
         for object in objs:
             if isinstance(object.inher, type):
-                return object
+                return object.inher
         return None

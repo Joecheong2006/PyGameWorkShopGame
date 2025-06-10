@@ -9,12 +9,16 @@ class CameraController(GameObject):
         self.sensitivity = 0.003
 
     def OnStart(self):
-        cam: Camera = GameObjectSystem.gameObjects[1].inher
+        cam: Camera | None = GameObjectSystem.FindFirstObjectByType(Camera)
+        if cam == None:
+            return
         cam.calOrthogonalMat(OrthogonalCameraState(-1, 1, -1 / cam.aspect, 1 / cam.aspect, 0.1, 100))
         cam.calPerspectiveMat(PerspectiveCameraState(glm.radians(45), cam.aspect, 0.1, 100))
 
     def OnUpdate(self, window: Window):
-        cam: Camera = GameObjectSystem.gameObjects[1].inher
+        cam: Camera | None = GameObjectSystem.FindFirstObjectByType(Camera)
+        if cam == None:
+            return
 
         dx, dy = window.rel[0], window.rel[1]
 
