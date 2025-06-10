@@ -2,25 +2,25 @@ from Window import Window
 
 class GameObjectSystem:
     from GameObject import GameObject
-    gameObjects: list[GameObject]
+    objects: list[GameObject]
     def __init__(self):
         raise RuntimeError("ScripSystem cannot be created!")
 
     @staticmethod
     def SetUp():
-        GameObjectSystem.gameObjects = []
+        GameObjectSystem.objects = []
 
     @staticmethod
     def ShutDown():
-        GameObjectSystem.gameObjects = []
+        GameObjectSystem.objects = []
 
     @staticmethod
     def AddGameObject(object: GameObject):
-        GameObjectSystem.gameObjects.append(object)
+        GameObjectSystem.objects.append(object)
 
     @staticmethod
     def Update(window: Window):
-        objs = GameObjectSystem.gameObjects
+        objs = GameObjectSystem.objects
         for object in objs:
             if not object.started:
                 object.OnStart()
@@ -31,7 +31,7 @@ class GameObjectSystem:
 
     @staticmethod
     def FindFirstObjectByType(type):
-        objs = GameObjectSystem.gameObjects
+        objs = GameObjectSystem.objects
         for object in objs:
             if isinstance(object.inher, type):
                 return object
