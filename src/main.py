@@ -11,6 +11,8 @@ from GameObjectSystem import *
 
 from Player import Player
 
+from Model import Model
+
 class Game(Application):
     def __init__(self):
         AnimationSystem.SetUp()
@@ -99,6 +101,7 @@ class Game(Application):
         print(f'GL_MAX_UNIFORM_BLOCK_SIZE: {glGetIntegerv(GL_MAX_UNIFORM_BLOCK_SIZE)}')
 
         self.player = Player()
+        self.scene = Model("res/TestScene3.glb")
 
         glClearColor(0.1, 0.1, 0.1, 1)
 
@@ -129,6 +132,8 @@ class Game(Application):
         # Render triangle to framebuffer
         self.postProcessingPass.bind()
         glClearColor(0.1, 0.1, 0.1, 1.0)
+
+        self.scene.render(self.cam)
 
         previous_time = pg.time.get_ticks()
         self.player.model.render(self.cam)
