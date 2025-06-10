@@ -18,7 +18,6 @@ class GameObjectSystem:
     def AddGameObject(object: GameObject):
         GameObjectSystem.gameObjects.append(object)
 
-
     @staticmethod
     def Update(window: Window):
         objs = GameObjectSystem.gameObjects
@@ -29,3 +28,11 @@ class GameObjectSystem:
 
         for object in objs:
             object.OnUpdate(window)
+
+    @staticmethod
+    def FindFirstObjectbyType(self, type):
+        objs = GameObjectSystem.gameObjects
+        for object in objs:
+            if isinstance(object.inher, type):
+                return object
+        return None
