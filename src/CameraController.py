@@ -33,17 +33,3 @@ class CameraController(GameObject):
         cam.rotation = glm.normalize(delta_rotation * cam.rotation)
 
         keys = window.keys
-
-        dir = glm.vec3(0, 0, 0)
-        if keys[pg.K_w]:
-            dir += cam.forward()
-        if keys[pg.K_s]:
-            dir -= cam.forward()
-        if keys[pg.K_d]:
-            dir += cam.right()
-        if keys[pg.K_a]:
-            dir -= cam.right()
-        if keys[pg.K_SPACE]:
-            dir += glm.vec3(0, 1, 0)
-        if dir != glm.vec3(0):
-            cam.position += 2 * glm.normalize(dir) * window.deltaTime
