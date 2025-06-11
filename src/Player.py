@@ -46,10 +46,10 @@ class Player(GameObject):
         self.v = glm.vec3(0)
 
     def followCameraDirection(self, cam: Camera):
-        self.forward = -cam.forward()
+        self.forward = -glm.vec3(cam.forward())
         self.forward[1] = 0
         self.forward = glm.normalize(self.forward)
-        self.right = cam.right()
+        self.right = glm.vec3(cam.right())
         self.right[1] = 0
         self.right = glm.normalize(self.right)
 

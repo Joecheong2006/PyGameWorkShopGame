@@ -8,9 +8,9 @@ class CameraController(GameObject):
     def __init__(self):
         super().__init__(self)
 
-        self.sensitivity = 0.2
         self.offset = glm.vec3(0.0, 2.0, 0.0)
-        self.distance = 5.0
+        self.cameraRotated = False
+        self.distance = 10.0
         self.max_pitch = 70
         self.rotationBlendingSpeed = 40
         self.positionBlendingSpeed = 50
@@ -21,8 +21,9 @@ class CameraController(GameObject):
 
         if self.camRef == None:
             return
-        self.camRef.calOrthogonalMat(OrthogonalCameraState(-self.distance, self.distance, -self.distance / self.camRef.aspect, self.distance / self.camRef.aspect, 0.1, 100))
         self.camRef.calPerspectiveMat(PerspectiveCameraState(glm.radians(45), self.camRef.aspect, 0.1, 100))
+        self.camRef.calOrthogonalMat(OrthogonalCameraState(-self.distance, self.distance, -self.distance / self.camRef.aspect, self.distance / self.camRef.aspect, 0.1, 100))
+        self.camRef.pitch = -35
 
     def wrapAngleDeg(self, angle_deg: float):
         return (angle_deg + 180) % 360 - 180
@@ -30,14 +31,13 @@ class CameraController(GameObject):
     def OnUpdate(self, window: Window):
         deltaTime = window.deltaTime
         if self.playerRef and self.camRef:
-            dx, dy = window.rel[0], window.rel[1]
-            yaw_angle = -dx * self.sensitivity
-            pitch_angle = -dy * self.sensitivity
+            keys = window.keys
 
-            self.camRef.yaw += yaw_angle
-            new_pitch = self.camRef.pitch + pitch_angle
-            new_pitch = glm.clamp(new_pitch, -self.max_pitch, self.max_pitch)
-            self.camRef.pitch = new_pitch
+            dx = keys[pg.K_j] - keys[pg.K_k]
+            if dx != 0 and not self.cameraRotated:
+                self.camRef.yaw += 90 * (keys[pg.K_j] - keys[pg.K_k])
+                self.cameraRotated = True
+            self.cameraRotated = dx != 0
 
             desired_rotation = glm.quat(glm.vec3(glm.radians(self.camRef.pitch), glm.radians(self.camRef.yaw), 0))
 
@@ -47,9 +47,7 @@ class CameraController(GameObject):
                 glm.clamp(self.rotationBlendingSpeed * deltaTime, 0.0, 1.0)
             ))
 
-            playerDirection = -self.playerRef.facingDir
-            if dx != 0 or dy != 0:
-                self.playerRef.followCameraDirection(self.camRef)
+            self.playerRef.followCameraDirection(self.camRef)
 
             desired_position = self.playerRef.transform.position + glm.vec3(0, 1.5, 0) - self.camRef.forward() * self.distance
 
