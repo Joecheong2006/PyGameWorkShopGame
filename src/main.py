@@ -180,10 +180,14 @@ class Game(Application):
         # Shadow Pass
         self.shadowPass.bind()
 
-        dummyCamera = Camera(10 * glm.vec3(glm.sin(t), 1, -glm.cos(t)), self.window)
-        dummyCamera.calOrthogonalMat(OrthogonalCameraState(-30, 30, -30 / self.cam.aspect, 30 / self.cam.aspect, 0.1, 100))
-        dummyCamera.rotation = glm.quatLookAt(-glm.normalize(dummyCamera.position), dummyCamera.up())
-        vp = dummyCamera.projectionMat * dummyCamera.getViewMatrix()
+        position = 10 * glm.vec3(glm.sin(t), 1, -glm.cos(t))
+        aspect = self.window.width / self.window.height
+        ortho = glm.ortho(-30, 30, -30 / aspect, 30 / aspect, 0.1, 100)
+        rotation = glm.quatLookAt(-glm.normalize(position), glm.vec3(0, 1, 0))
+        forward = rotation * glm.vec3(0, 0, -1)
+        target = position + forward
+        view = glm.lookAt(position, target, rotation * glm.vec3(0, 1, 0))
+        vp = ortho * view
         lvp = vp.to_list()
 
         self.shadowPass.shadowMap.shader.bind()
@@ -203,8 +207,9 @@ class Game(Application):
         self.shadowPass.shadowMapTexture.bind(1)
         Model.shader.setUniform1i("shadowMap", 1)
         Model.shader.setUniformMat4("lvp", 1, lvp)
-        Model.shader.setUniform3f("lightDir", dummyCamera.forward())
+        Model.shader.setUniform3f("lightDir", forward)
 
+        # Render Scene
         self.scene.render(Model.shader, self.cam)
         self.player.model.render(Model.shader, self.cam)
 
