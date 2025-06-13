@@ -92,6 +92,10 @@ model_frag_shader = """
     }
 
     void main() {
+        if (hasDiffuseTex && texture(diffuseTexture, uv).a < 0.1) {
+            discard;
+        }
+
         vec3 lightProjPos = lightFragPos.xyz / lightFragPos.w;
         vec3 lightUV = lightProjPos * 0.5 + 0.5;
 

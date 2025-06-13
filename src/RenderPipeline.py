@@ -29,6 +29,7 @@ class ShadowPass:
         glViewport(0, 0, self.shadowMap.width, self.shadowMap.height)
         glClear(GL_DEPTH_BUFFER_BIT)
         glCullFace(GL_FRONT);
+        glEnable(GL_BLEND)
 
     def unbind(self):
         self.shadowMap.unbind()

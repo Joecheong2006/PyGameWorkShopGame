@@ -39,6 +39,7 @@ class Game(Application):
                 """
                 #version 330 core
                 layout (location = 0) in vec3 aPos;
+                layout (location = 2) in vec2 aUV;
                 layout (location = 3) in uvec4 aJointIDs;
                 layout (location = 4) in vec4 aWeights;
 
@@ -47,6 +48,7 @@ class Game(Application):
 
                 uniform mat4 jointMatrices[100];
                 uniform bool hasAnimation;
+                out vec2 uv;
 
                 void main() {
                     mat4 skinMatrix = mat4(1);
@@ -58,11 +60,21 @@ class Game(Application):
                         aWeights.w * jointMatrices[aJointIDs.w];
                     }
                     gl_Position = lvp * model * skinMatrix * vec4(aPos, 1.0);
+                    uv = aUV;
                 }
                 """,
                 """
                 #version 330 core
-                void main() {}
+
+                uniform sampler2D diffuseTexture;
+                uniform bool hasDiffuseTex;
+                in vec2 uv;
+
+                void main() {
+                    if (hasDiffuseTex && texture(diffuseTexture, uv).a < 0.1) {
+                        discard;
+                    }
+                }
                 """
                 )
 
