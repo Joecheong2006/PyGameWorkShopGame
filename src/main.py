@@ -200,10 +200,10 @@ class Game(Application):
 
         Model.shader.bind()
 
-        self.scene.shader.setUniformMat4("lvp", 1, lvp)
         self.shadowPass.shadowMapTexture.bind(1)
-        self.scene.shader.setUniform1i("shadowMap", 1)
-        self.scene.shader.setUniform3f("lightDir", dummyCamera.forward())
+        Model.shader.setUniform1i("shadowMap", 1)
+        Model.shader.setUniformMat4("lvp", 1, lvp)
+        Model.shader.setUniform3f("lightDir", dummyCamera.forward())
 
         self.scene.render(Model.shader, self.cam)
         self.player.model.render(Model.shader, self.cam)
