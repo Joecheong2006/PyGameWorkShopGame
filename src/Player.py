@@ -23,8 +23,6 @@ class Player(GameObject):
         self.animator.setDefaultState("Idle")
         self.animator.addAnimationState("FastRunning")
 
-        AnimationSystem.AddAnimation(self.animator)
-
         self.running: bool = False
 
         def startPlayBack(animator: Animator):

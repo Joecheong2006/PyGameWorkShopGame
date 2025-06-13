@@ -45,6 +45,8 @@ class AnimationState:
 
 class Animator:
     def __init__(self, model: Model):
+        from AnimationSystem import AnimationSystem
+        AnimationSystem.AddAnimation(self)
         model.animating = True
         self.target: Model = model
 
