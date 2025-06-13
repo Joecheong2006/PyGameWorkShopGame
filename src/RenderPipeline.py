@@ -9,7 +9,7 @@ RenderPipeline:
 
 class ShadowPass:
     def __init__(self, shaderProgram: glShaderProgram, width: int, height: int):
-        self.shadowMap = glFramebuffer(shaderProgram, width, height, quad=False)
+        self.shadowMap = glFramebuffer(shaderProgram, width, height)
         self.shadowMap.bind()
         self.shadowMapTexture = glTexture(
                 self.shadowMap.width, self.shadowMap.height, 
@@ -34,6 +34,7 @@ class ShadowPass:
 
 class PostProcessingPass:
     def __init__(self, shaderProgram: glShaderProgram, style: int, width: int, height: int):
+        glFramebuffer.initailizeQuad()
         self.fb = glFramebuffer(shaderProgram, width, height)
         self.fb.bind()
         self.fb.genRenderBuffer(GL_DEPTH24_STENCIL8)
@@ -91,7 +92,7 @@ class PostProcessingPass:
                 }
                 """)
 
-        self.depthMap = glFramebuffer(depthShader, width, height, quad=False)
+        self.depthMap = glFramebuffer(depthShader, width, height)
         self.depthMapTexture = glTexture(
                 self.depthMap.width, self.depthMap.height, 
                 GL_NEAREST, format=GL_DEPTH_COMPONENT, type=GL_FLOAT, mipmap=False, wrapStyle=GL_CLAMP_TO_BORDER)
@@ -116,7 +117,7 @@ class PostProcessingPass:
     def render(self):
         glClear(int(GL_COLOR_BUFFER_BIT) | int(GL_DEPTH_BUFFER_BIT))
         glUseProgram(self.fb.shader.program)
-        glBindVertexArray(self.fb.quad_vao)
+        glBindVertexArray(glFramebuffer.quad_vao)
         self.screenTexture.bind(0)
         glUniform1i(glGetUniformLocation(self.fb.shader.program, "screenTexture"), 0)
         self.depthMapTexture.bind(1)
@@ -128,3 +129,4 @@ class PostProcessingPass:
         self.screenTexture.delete()
         self.depthMap.delete()
         self.depthMapTexture.delete()
+        glFramebuffer.deleteQuad()

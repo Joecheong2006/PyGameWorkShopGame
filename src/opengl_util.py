@@ -188,21 +188,30 @@ class glFramebuffer:
          1.0, -1.0,     1.0, 0.0,
          1.0,  1.0,     1.0, 1.0
     ], dtype=np.float32)
+    quad_vao: int
+    quad_vbo: int
 
-    def __init__(self, shaderProgram: glShaderProgram, width: int, height: int, quad=True):
+    @staticmethod
+    def initailizeQuad():
+        glFramebuffer.quad_vao = glGenVertexArrays(1)
+        glFramebuffer.quad_vbo = glGenBuffers(1)
+        glBindVertexArray(glFramebuffer.quad_vao)
+        glBindBuffer(GL_ARRAY_BUFFER, glFramebuffer.quad_vbo)
+        glBufferData(GL_ARRAY_BUFFER, glFramebuffer.quad_vertices.nbytes, glFramebuffer.quad_vertices, GL_STATIC_DRAW)
+        glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * glFramebuffer.quad_vertices.itemsize, ctypes.c_void_p(0))
+        glEnableVertexAttribArray(0)
+        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * glFramebuffer.quad_vertices.itemsize, ctypes.c_void_p(8))
+        glEnableVertexAttribArray(1)
+
+    @staticmethod
+    def deleteQuad():
+        glDeleteVertexArrays(1, [glFramebuffer.quad_vao])
+        glDeleteBuffers(1, [glFramebuffer.quad_vbo])
+
+    def __init__(self, shaderProgram: glShaderProgram, width: int, height: int):
         self.width = width
         self.height = height
         self.shader = shaderProgram
-        if quad:
-            self.quad_vao = glGenVertexArrays(1)
-            self.quad_vbo = glGenBuffers(1)
-            glBindVertexArray(self.quad_vao)
-            glBindBuffer(GL_ARRAY_BUFFER, self.quad_vbo)
-            glBufferData(GL_ARRAY_BUFFER, self.quad_vertices.nbytes, self.quad_vertices, GL_STATIC_DRAW)
-            glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * self.quad_vertices.itemsize, ctypes.c_void_p(0))
-            glEnableVertexAttribArray(0)
-            glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * self.quad_vertices.itemsize, ctypes.c_void_p(8))
-            glEnableVertexAttribArray(1)
 
         self.fbo = glGenFramebuffers(1)
         glBindFramebuffer(GL_FRAMEBUFFER, self.fbo)
@@ -230,6 +239,4 @@ class glFramebuffer:
 
     def delete(self) -> None:
         self.shader.delete()
-        glDeleteVertexArrays(1, [self.quad_vao])
-        glDeleteBuffers(1, [self.quad_vbo])
         glDeleteFramebuffers(1, [self.fbo])
