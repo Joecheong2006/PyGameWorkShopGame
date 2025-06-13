@@ -31,6 +31,7 @@ model_vert_shader = """
     layout (location = 4) in vec4 aWeights;
 
     uniform mat4 vp;
+    uniform mat4 lvp;
     uniform mat4 model;
     uniform mat4 inverseModel;
 
@@ -39,6 +40,7 @@ model_vert_shader = """
     uniform bool hasAnimation;
 
     out vec3 fragPos;
+    out vec4 lightFragPos;
     out vec3 normal;
     out vec2 uv;
 
@@ -57,6 +59,8 @@ model_vert_shader = """
         fragPos = vec3(model * vec4(aPos, 1.0));
         normal = normalize(mat3(inverseModel) * mat3(skinMatrix) * aNormal);
         uv = aUV;
+
+        lightFragPos = lvp * fullTransform * vec4(aPos, 1.0);
     }
     """
 
@@ -67,38 +71,50 @@ model_frag_shader = """
 
     uniform vec3 color;
     uniform sampler2D diffuseTexture;
+    uniform sampler2D shadowMap;
     uniform bool hasDiffuseTex;
-    uniform vec3 lightPos;
+    uniform vec3 lightDir;
 
     in vec3 fragPos;
+    in vec4 lightFragPos;
     in vec3 normal;
     in vec2 uv;
 
-    #define TOON_LEVEL 10.0
+    #define TOON_LEVEL 8.0
+
+    float getShadowFactor(in vec3 lightUV, in vec3 N) {
+        if (lightUV.z > 1.0)
+            return 0.0;
+        float bias = 0.001;
+        bias = max(0.001 * (1.0 - dot(N, -lightDir)), bias);
+        float depth = texture(shadowMap, lightUV.xy).r;
+        return lightUV.z > depth + bias ? 0.5 : 1.0;
+    }
 
     void main() {
+        vec3 lightProjPos = lightFragPos.xyz / lightFragPos.w;
+        vec3 lightUV = lightProjPos * 0.5 + 0.5;
+
         vec3 N = normal;
 
-        // vec3 lightPos = vec3(0, 2, 2);
-        vec3 lightDir = normalize(lightPos - fragPos);
-        float factor = dot(N, lightDir);
+        float shadowFactor = getShadowFactor(lightUV, N);
 
-        if (factor > 0) {
-            factor = ceil(factor * TOON_LEVEL) / TOON_LEVEL;
-        }
-        else {
-            factor = 0;
-        }
+        float factor = dot(N, -normalize(lightDir));
 
-        vec3 finalColor = vec3(1.0);
+        // factor = factor > 0 ? ceil(factor * TOON_LEVEL) / TOON_LEVEL : 0;
+        factor = factor > 0 ? factor : 0;
+
+        vec4 finalColor = vec4(1.0);
         if (!hasDiffuseTex) {
-            finalColor = color;
+            finalColor = vec4(color, 1);
         }
         else {
-            finalColor = texture(diffuseTexture, uv).rgb;
+            finalColor = texture(diffuseTexture, uv);
         }
-        // finalColor *= (N + 1.0) * 0.5;
-        FragColor = vec4(finalColor * factor, 1);
+
+        // finalColor.rgb *= (N + 1.0) * 0.5;
+        finalColor.rgb = ceil(finalColor.rgb * TOON_LEVEL) / TOON_LEVEL;
+        FragColor = vec4(finalColor.rgb * shadowFactor, finalColor.a);
     }
     """
 
@@ -342,31 +358,28 @@ class Model:
         self.vbos.delete()
         glDeleteVertexArrays(1, [self.vao])
 
-    def render(self, camera):
-        self.shader.bind()
+    def render(self, shader: glShaderProgram, camera):
         m = camera.projectionMat * camera.getViewMatrix()
-        glUniformMatrix4fv(glGetUniformLocation(self.shader.program, "vp"), 1, GL_FALSE, m.to_list())
+        shader.setUniformMat4("vp", 1, m.to_list())
         if self.animating:
-            glUniform1i(glGetUniformLocation(self.shader.program, "hasAnimation"), 1)
-            glUniformMatrix4fv(glGetUniformLocation(self.shader.program, "jointMatrices"), len(self.jointMatrices), GL_TRUE, np.array(self.jointMatrices))
+            shader.setUniform1i("hasAnimation", 1)
+            shader.setUniformMat4("jointMatrices", len(self.jointMatrices), np.array(self.jointMatrices), GL_TRUE)
+        else:
+            shader.setUniform1i("hasAnimation", 0)
 
         transformMatrix = self.transform.getMatrix()
 
-        import pygame as pg
-        t = pg.time.get_ticks() * 0.001
-        # glUniform3f(glGetUniformLocation(self.shader.program, "lightPos"), 2 * glm.sin(t), 2, 2 * glm.cos(t))
-        glUniform3f(glGetUniformLocation(self.shader.program, "lightPos"), 0, 3, 3)
         glBindVertexArray(self.vao)
         for i, entry in enumerate(self.layout):
-            glUniform3f(glGetUniformLocation(self.shader.program, "color"), *self.materials[i].baseColor)
+            shader.setUniform3f("color", self.materials[i].baseColor)
             model = self.modelMats[entry.meshIndex] * transformMatrix
-            glUniformMatrix4fv(glGetUniformLocation(self.shader.program, "model"), 1, GL_FALSE, model.to_list())
+            shader.setUniformMat4("model", 1, model.to_list())
             inverseModel = glm.transpose(glm.inverse(model))
-            glUniformMatrix4fv(glGetUniformLocation(self.shader.program, "inverseModel"), 1, GL_FALSE, inverseModel.to_list())
+            shader.setUniformMat4("inverseModel", 1, inverseModel.to_list())
 
-            glUniform1i(glGetUniformLocation(self.shader.program, "hasDiffuseTex"), self.materials[i].hasDiffuseTex)
+            shader.setUniform1i("hasDiffuseTex", self.materials[i].hasDiffuseTex)
             if self.materials[i].hasDiffuseTex:
                 self.materials[i].diffuseTexture.bind(0)
-                glUniform1i(glGetUniformLocation(self.shader.program, "diffuseTexture"), 0)
+                shader.setUniform1i("diffuseTexture", 0)
 
             glDrawElementsBaseVertex(GL_TRIANGLES, entry.indexCount, GL_UNSIGNED_INT, ctypes.c_void_p(4 * entry.indexOffset), entry.vertexOffset)

@@ -2,7 +2,7 @@ import pygame as pg
 from Application import *
 from opengl_util import *
 from QuadRenderer import *
-from RenderPipeline import PostProcessingPass
+from RenderPipeline import PostProcessingPass, ShadowPass
 from Camera import *
 from CameraController import *
 
@@ -15,9 +15,8 @@ from Model import Model
 
 class Game(Application):
     def __init__(self):
-        AnimationSystem.SetUp()
-        scale = (4, 4)
-        PIXEL_WIDTH, PIXEL_HEIGHT = 320, 180
+        scale = (3, 3)
+        PIXEL_WIDTH, PIXEL_HEIGHT = int(320 * 1.5), int(180 * 1.5)
         # scale = (1, 1)
         # PIXEL_WIDTH, PIXEL_HEIGHT = 320 * 4, 180 * 4
 
@@ -27,7 +26,7 @@ class Game(Application):
         super().__init__(WINDOW_SIZE)
 
         glEnable(GL_DEPTH_TEST)
-        glDisable(GL_CULL_FACE);
+        glDepthFunc(GL_LESS)
 
         glEnable(GL_BLEND)
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
@@ -35,6 +34,39 @@ class Game(Application):
         # Initialize Systems
         AnimationSystem.SetUp()
         GameObjectSystem.SetUp()
+
+        shadowMapShader = glShaderProgram(
+                """
+                #version 330 core
+                layout (location = 0) in vec3 aPos;
+                layout (location = 3) in uvec4 aJointIDs;
+                layout (location = 4) in vec4 aWeights;
+
+                uniform mat4 lvp;
+                uniform mat4 model;
+
+                uniform mat4 jointMatrices[100];
+                uniform bool hasAnimation;
+
+                void main() {
+                    mat4 skinMatrix = mat4(1);
+                    if (hasAnimation) {
+                        skinMatrix =
+                        aWeights.x * jointMatrices[aJointIDs.x] +
+                        aWeights.y * jointMatrices[aJointIDs.y] +
+                        aWeights.z * jointMatrices[aJointIDs.z] +
+                        aWeights.w * jointMatrices[aJointIDs.w];
+                    }
+                    gl_Position = lvp * model * skinMatrix * vec4(aPos, 1.0);
+                }
+                """,
+                """
+                #version 330 core
+                void main() {}
+                """
+                )
+
+        self.shadowPass = ShadowPass(shadowMapShader, 2048, 2048)
 
         postProcessingShader = glShaderProgram(
                 """
@@ -60,7 +92,7 @@ class Game(Application):
                 }
                 """
                 )
-        self.postProcessingPass = PostProcessingPass(postProcessingShader, GL_NEAREST, (PIXEL_WIDTH, PIXEL_HEIGHT))
+        self.postProcessingPass = PostProcessingPass(postProcessingShader, GL_NEAREST, PIXEL_WIDTH, PIXEL_HEIGHT)
 
         self.renderer = QuadRenderer(self.window)
         self.quad_shader = glShaderProgram(
@@ -126,17 +158,52 @@ class Game(Application):
     def OnUpdate(self):
         self.window.dispatchEvent(self.eventHandler)
 
+        previous_time = pg.time.get_ticks()
+
         AnimationSystem.Update(self.window.deltaTime)
         GameObjectSystem.Update(self.window)
+
+        t = pg.time.get_ticks() * 0.0003
+
+        # Shadow Pass
+        self.shadowPass.bind()
+
+        dummyCamera = Camera(10 * glm.vec3(glm.sin(t), 1, -glm.cos(t)), self.window)
+        dummyCamera.calOrthogonalMat(OrthogonalCameraState(-30, 30, -30 / self.cam.aspect, 30 / self.cam.aspect, 0.1, 100))
+        dummyCamera.rotation = glm.quatLookAt(-glm.normalize(dummyCamera.position), dummyCamera.up())
+        vp = dummyCamera.projectionMat * dummyCamera.getViewMatrix()
+        lvp = vp.to_list()
+
+        self.shadowPass.shadowMap.shader.bind()
+        self.shadowPass.shadowMap.shader.setUniformMat4("lvp", 1, lvp)
+
+        self.scene.render(self.shadowPass.shadowMap.shader, self.cam)
+        self.player.model.render(self.shadowPass.shadowMap.shader, self.cam)
+
+        self.shadowPass.unbind()
 
         # Render triangle to framebuffer
         self.postProcessingPass.bind()
         glClearColor(0.1, 0.1, 0.1, 1.0)
 
-        self.scene.render(self.cam)
+        self.scene.shader.bind()
 
-        previous_time = pg.time.get_ticks()
-        self.player.model.render(self.cam)
+        self.scene.shader.setUniformMat4("lvp", 1, lvp)
+        self.shadowPass.shadowMapTexture.bind(1)
+        self.scene.shader.setUniform1i("shadowMap", 1)
+        self.scene.shader.setUniform3f("lightDir", dummyCamera.forward())
+
+        self.scene.render(self.scene.shader, self.cam)
+
+        self.player.model.shader.bind()
+
+        self.player.model.shader.setUniformMat4("lvp", 1, lvp)
+        self.shadowPass.shadowMapTexture.bind(1)
+        self.player.model.shader.setUniform1i("shadowMap", 1)
+        self.player.model.shader.setUniform3f("lightDir", dummyCamera.forward())
+
+        self.player.model.render(self.player.model.shader, self.cam)
+
         delta_time: float = (pg.time.get_ticks() - previous_time)
         pg.display.set_caption(f'{delta_time}')
 
