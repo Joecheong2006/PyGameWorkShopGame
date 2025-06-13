@@ -94,13 +94,15 @@ class Game(Application):
                 """,
                 """
                 #version 330 core
+
+                layout(location = 0) out vec4 fragColor;
                 in vec2 TexCoord;
-                out vec4 FragColor;
                 uniform sampler2D screenTexture;
 
-                void main() {
+                void main()
+                {
                     vec3 color = texture(screenTexture, TexCoord).rgb;
-                    FragColor = vec4(color, 1.0);
+                    fragColor = vec4(color, 1);
                 }
                 """
                 )
