@@ -34,19 +34,19 @@ class ShadowPass:
 
 class PostProcessingPass:
     def __init__(self, shaderProgram: glShaderProgram, style: int, width: int, height: int):
-        self._fb = glFramebuffer(shaderProgram, width, height)
-        self._fb.bind()
-        self._fb.genRenderBuffer(GL_DEPTH24_STENCIL8)
-        self._fb.attachRenderBuffer(GL_DEPTH_STENCIL_ATTACHMENT)
-        self._screenTexture = glTexture(self._fb.width, self._fb.height, style)
-        self._fb.attachTexture(self._screenTexture)
+        self.fb = glFramebuffer(shaderProgram, width, height)
+        self.fb.bind()
+        self.fb.genRenderBuffer(GL_DEPTH24_STENCIL8)
+        self.fb.attachRenderBuffer(GL_DEPTH_STENCIL_ATTACHMENT)
+        self.screenTexture = glTexture(self.fb.width, self.fb.height, style)
+        self.fb.attachTexture(self.screenTexture)
 
-        if not self._fb.isCompleted():
+        if not self.fb.isCompleted():
             raise RuntimeError("Imcompleted framebuffer")
 
-        self._fb.unbind()
+        self.fb.unbind()
 
-        self._fb.bind()
+        self.fb.bind()
 
 
         depthShader = glShaderProgram(
@@ -106,23 +106,25 @@ class PostProcessingPass:
         self.depthMap.unbind()
 
     def bind(self):
-        self._fb.bind()
-        glViewport(0, 0, self._fb.width, self._fb.height)
+        self.fb.bind()
+        glViewport(0, 0, self.fb.width, self.fb.height)
         glClear(int(GL_COLOR_BUFFER_BIT) | int(GL_DEPTH_BUFFER_BIT))
 
     def unbind(self):
-        self._fb.unbind()
+        self.fb.unbind()
 
     def render(self):
         glClear(int(GL_COLOR_BUFFER_BIT) | int(GL_DEPTH_BUFFER_BIT))
-        glUseProgram(self._fb.shader.program)
-        glBindVertexArray(self._fb.quad_vao)
-        self._screenTexture.bind(0)
-        glUniform1i(glGetUniformLocation(self._fb.shader.program, "screenTexture"), 0)
+        glUseProgram(self.fb.shader.program)
+        glBindVertexArray(self.fb.quad_vao)
+        self.screenTexture.bind(0)
+        glUniform1i(glGetUniformLocation(self.fb.shader.program, "screenTexture"), 0)
         self.depthMapTexture.bind(1)
-        glUniform1i(glGetUniformLocation(self._fb.shader.program, "depthMapTexture"), 1)
+        glUniform1i(glGetUniformLocation(self.fb.shader.program, "depthMapTexture"), 1)
         glDrawArrays(GL_TRIANGLES, 0, 6)
 
     def delete(self):
-        self._fb.delete()
-        self._screenTexture.delete()
+        self.fb.delete()
+        self.screenTexture.delete()
+        self.depthMap.delete()
+        self.depthMapTexture.delete()
