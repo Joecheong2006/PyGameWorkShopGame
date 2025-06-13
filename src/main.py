@@ -15,8 +15,8 @@ from Model import Model
 
 class Game(Application):
     def __init__(self):
-        scale = (3, 3)
-        PIXEL_WIDTH, PIXEL_HEIGHT = int(320 * 1.5), int(180 * 1.5)
+        scale = (2, 2)
+        PIXEL_WIDTH, PIXEL_HEIGHT = int(320 * 2.25), int(180 * 2.25)
         # scale = (1, 1)
         # PIXEL_WIDTH, PIXEL_HEIGHT = 320 * 4, 180 * 4
 
@@ -111,15 +111,8 @@ class Game(Application):
                     depth += texture(depthMapTexture, TexCoord + vec2(-1, 0) * texelSize).r;
                     depth /= 4.0;
 
-                    vec3 diffColor = vec3(0);
-                    diffColor += texture(screenTexture, TexCoord + vec2(0, 1) * texelSize).rgb;
-                    diffColor += texture(screenTexture, TexCoord + vec2(0, -1) * texelSize).rgb;
-                    diffColor += texture(screenTexture, TexCoord + vec2(1, 0) * texelSize).rgb;
-                    diffColor += texture(screenTexture, TexCoord + vec2(-1, 0) * texelSize).rgb;
-                    diffColor /= 4.0;
-
                     float diff = 1;
-                    if (depth - depthOrg > 0.003) {
+                    if (depth - depthOrg > 0.001) {
                         diff = depth - depthOrg;
                     }
 
