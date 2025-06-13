@@ -49,15 +49,16 @@ class GameObjectSystem:
         for object in objs:
             object.OnUpdate(window)
 
+    from opengl_util import glShaderProgram
     @staticmethod
-    def RenderScene():
+    def RenderScene(shader: glShaderProgram):
         mainCamera = GameObjectSystem.mainCamera
         if mainCamera == None:
             return
 
         modelObjects = GameObjectSystem.modelObjects
         for model in modelObjects:
-            model.render(Model.shader, mainCamera)
+            model.render(shader, mainCamera)
 
     @staticmethod
     def FindFirstObjectByType(type):

@@ -193,8 +193,7 @@ class Game(Application):
         self.shadowPass.shadowMap.shader.bind()
         self.shadowPass.shadowMap.shader.setUniformMat4("lvp", 1, lvp)
 
-        self.scene.render(self.shadowPass.shadowMap.shader, self.cam)
-        self.player.model.render(self.shadowPass.shadowMap.shader, self.cam)
+        GameObjectSystem.RenderScene(self.shadowPass.shadowMap.shader)
 
         self.shadowPass.unbind()
 
@@ -210,7 +209,7 @@ class Game(Application):
         Model.shader.setUniform3f("lightDir", forward)
 
         # Render Scene
-        GameObjectSystem.RenderScene()
+        GameObjectSystem.RenderScene(Model.shader)
 
         delta_time: float = (pg.time.get_ticks() - previous_time)
         pg.display.set_caption(f'{delta_time}')
