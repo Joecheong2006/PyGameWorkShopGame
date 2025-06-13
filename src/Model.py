@@ -88,8 +88,8 @@ model_frag_shader = """
     float getShadowFactor(in vec3 lightUV, in vec3 N) {
         if (lightUV.z > 1.0)
             return 0.0;
-        float bias = 0.001;
-        bias = max(0.001 * (1.0 - dot(N, -lightDir)), bias);
+        float bias = 0.003;
+        bias = max(0.003 * (1.0 - dot(N, -lightDir)), bias);
         float depth = texture(shadowMap, lightUV.xy).r;
         return lightUV.z > depth + bias ? 0.5 : 1.0;
     }
@@ -109,23 +109,19 @@ model_frag_shader = """
 
         float shadowFactor = getShadowFactor(lightUV, N);
 
-        vec4 finalColor = vec4(1.0);
-        if (!hasDiffuseTex) {
-            finalColor = vec4(color, 1);
-        }
-        else {
-            finalColor = texture(diffuseTexture, uv);
-        }
+        vec4 finalColor = hasDiffuseTex ? texture(diffuseTexture, uv) : vec4(color, 1);
 
-        vec3 ambient = vec3(0.9);
+        vec3 ambient = vec3(0.7);
         vec3 diffuse = vec3(max(0, dot(N, L)));
         float spec = 0;
-        if (shininess > 0.0)
+        if (spec > 0) 
             spec = pow(max(dot(viewDir, R), 0.0), shininess);
         vec3 specular = spec * vec3(1.0);
 
         finalColor.rgb = ceil(finalColor.rgb * TOON_LEVEL) / TOON_LEVEL;
-        finalColor.rgb *= (ambient + diffuse * 0.1 + specular * 0.1) * shadowFactor;
+        finalColor.rgb = finalColor.rgb * (ambient + diffuse * 0.2 + specular * 0.2);
+        finalColor.rgb *= shadowFactor;
+        finalColor.rgb = ceil(finalColor.rgb * TOON_LEVEL) / TOON_LEVEL;
         FragColor = finalColor;
     }
     """
@@ -155,8 +151,12 @@ def init_materials(gltf, layout):
             continue
         mat = gltf.materials[entry.materialIndex]
         pbr = mat.pbrMetallicRoughness
+        print(mat)
         m.roughness = pbr.roughnessFactor if pbr.roughnessFactor else 1.0
-        m.shininess = max(1.0, 1.0 / (m.roughness * m.roughness))
+        if m.roughness == 1:
+            m.shininess = 0
+        else:
+            m.shininess = max(1.0, 1.0 / (m.roughness * m.roughness))
 
         texture = pbr.baseColorTexture
         color = pbr.baseColorFactor

@@ -98,10 +98,32 @@ class Game(Application):
                 layout(location = 0) out vec4 fragColor;
                 in vec2 TexCoord;
                 uniform sampler2D screenTexture;
+                uniform sampler2D depthMapTexture;
 
                 void main()
                 {
-                    vec3 color = texture(screenTexture, TexCoord).rgb;
+                    float depth = 0;
+                    float depthOrg = texture(depthMapTexture, TexCoord).r;
+                    vec2 texelSize = 1.0 / textureSize(depthMapTexture, 0);
+                    depth += texture(depthMapTexture, TexCoord + vec2(0, 1) * texelSize).r;
+                    depth += texture(depthMapTexture, TexCoord + vec2(0, -1) * texelSize).r;
+                    depth += texture(depthMapTexture, TexCoord + vec2(1, 0) * texelSize).r;
+                    depth += texture(depthMapTexture, TexCoord + vec2(-1, 0) * texelSize).r;
+                    depth /= 4.0;
+
+                    vec3 diffColor = vec3(0);
+                    diffColor += texture(screenTexture, TexCoord + vec2(0, 1) * texelSize).rgb;
+                    diffColor += texture(screenTexture, TexCoord + vec2(0, -1) * texelSize).rgb;
+                    diffColor += texture(screenTexture, TexCoord + vec2(1, 0) * texelSize).rgb;
+                    diffColor += texture(screenTexture, TexCoord + vec2(-1, 0) * texelSize).rgb;
+                    diffColor /= 4.0;
+
+                    float diff = 1;
+                    if (depth - depthOrg > 0.003) {
+                        diff = depth - depthOrg;
+                    }
+
+                    vec3 color = texture(screenTexture, TexCoord).rgb * diff;
                     fragColor = vec4(color, 1);
                 }
                 """
@@ -147,7 +169,8 @@ class Game(Application):
         print(f'GL_MAX_UNIFORM_BLOCK_SIZE: {glGetIntegerv(GL_MAX_UNIFORM_BLOCK_SIZE)}')
 
         Player()
-        Model("res/TestScene3.glb")
+        # Model("res/TestScene3.glb")
+        Model("res/TestScene5.glb")
 
         glClearColor(0.1, 0.1, 0.1, 1)
 
@@ -197,6 +220,19 @@ class Game(Application):
         GameObjectSystem.RenderScene(self.shadowPass.shadowMap.shader)
 
         self.shadowPass.unbind()
+
+        self.postProcessingPass.depthMap.bind()
+        glViewport(0, 0, self.postProcessingPass.depthMap.width, self.postProcessingPass.depthMap.height)
+        glClear(GL_DEPTH_BUFFER_BIT)
+
+        self.postProcessingPass.depthMap.shader.bind()
+        cam = GameObjectSystem.mainCamera
+        if cam:
+            vp = cam.projectionMat * cam.getViewMatrix()
+            self.shadowPass.shadowMap.shader.setUniformMat4("lvp", 1, vp.to_list())
+            GameObjectSystem.RenderScene(self.postProcessingPass.depthMap.shader)
+
+        self.postProcessingPass.depthMap.unbind()
 
         # Render triangle to framebuffer
         self.postProcessingPass.bind()
