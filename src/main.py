@@ -206,12 +206,6 @@ class Game(Application):
         self.scene.shader.setUniform3f("lightDir", dummyCamera.forward())
 
         self.scene.render(Model.shader, self.cam)
-
-        self.player.model.shader.setUniformMat4("lvp", 1, lvp)
-        self.shadowPass.shadowMapTexture.bind(1)
-        self.player.model.shader.setUniform1i("shadowMap", 1)
-        self.player.model.shader.setUniform3f("lightDir", dummyCamera.forward())
-
         self.player.model.render(Model.shader, self.cam)
 
         delta_time: float = (pg.time.get_ticks() - previous_time)
