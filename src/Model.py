@@ -117,16 +117,16 @@ model_frag_shader = """
             finalColor = texture(diffuseTexture, uv);
         }
 
-        vec3 ambient = vec3(0.8);
+        vec3 ambient = vec3(0.9);
         vec3 diffuse = vec3(max(0, dot(N, L)));
         float spec = 0;
         if (shininess > 0.0)
             spec = pow(max(dot(viewDir, R), 0.0), shininess);
         vec3 specular = spec * vec3(1.0);
 
-        finalColor.rgb = ceil(finalColor.rgb * TOON_LEVEL) / TOON_LEVEL;
+        finalColor.rgb = ceil(finalColor.rgb * TOON_LEVEL) / TOON_LEVEL * shadowFactor;
         finalColor.rgb *= (ambient + diffuse * 0.1 + specular * 0.1);
-        FragColor = vec4(finalColor.rgb * shadowFactor, finalColor.a);
+        FragColor = finalColor;
     }
     """
 
