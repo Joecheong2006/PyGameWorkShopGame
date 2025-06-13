@@ -12,12 +12,6 @@ class Player(GameObject):
         super().__init__(self)
 
         self.model = Model("res/M.glb")
-        # self.model = Model("res/Kick.glb")
-        # self.model = Model("res/Capoeira.glb")
-        # self.model = Model("res/AlienSoldier.glb")
-        # self.model = Model("res/TestScene2.glb")
-        # self.model = Model("res/Ronin.glb")
-        # self.model = Model("res/Monkey.glb")
 
         self.animator = Animator(self.model)
         self.animator.setDefaultState("Idle")
