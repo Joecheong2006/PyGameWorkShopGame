@@ -1,14 +1,16 @@
 from Window import Window
+from Model import Model
 
 class GameObjectSystem:
     from GameObject import GameObject
     objects: list[GameObject]
     def __init__(self):
-        raise RuntimeError("ScripSystem cannot be created!")
+        raise RuntimeError("GmaeObjectSystem cannot be created!")
 
     @staticmethod
     def SetUp():
         GameObjectSystem.objects = []
+        Model.CompileShader()
 
     @staticmethod
     def ShutDown():

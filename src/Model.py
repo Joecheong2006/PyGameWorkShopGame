@@ -292,10 +292,14 @@ def load_animations(gltf):
     return animNameIndexMap, animations, skins, ordered_node_indexes
 
 class Model:
+    shader: glShaderProgram
+    @staticmethod
+    def CompileShader():
+        Model.shader = glShaderProgram(model_vert_shader, model_frag_shader)
+
     def __init__(self, path: str):
         self.transform = Transform()
 
-        self.shader = glShaderProgram(model_vert_shader, model_frag_shader)
         gltf = pygltflib.GLTF2().load(path)
         if gltf == None:
             raise RuntimeError(f"Failed to load {path}")

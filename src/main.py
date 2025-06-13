@@ -198,23 +198,21 @@ class Game(Application):
         self.postProcessingPass.bind()
         glClearColor(0.1, 0.1, 0.1, 1.0)
 
-        self.scene.shader.bind()
+        Model.shader.bind()
 
         self.scene.shader.setUniformMat4("lvp", 1, lvp)
         self.shadowPass.shadowMapTexture.bind(1)
         self.scene.shader.setUniform1i("shadowMap", 1)
         self.scene.shader.setUniform3f("lightDir", dummyCamera.forward())
 
-        self.scene.render(self.scene.shader, self.cam)
-
-        self.player.model.shader.bind()
+        self.scene.render(Model.shader, self.cam)
 
         self.player.model.shader.setUniformMat4("lvp", 1, lvp)
         self.shadowPass.shadowMapTexture.bind(1)
         self.player.model.shader.setUniform1i("shadowMap", 1)
         self.player.model.shader.setUniform3f("lightDir", dummyCamera.forward())
 
-        self.player.model.render(self.player.model.shader, self.cam)
+        self.player.model.render(Model.shader, self.cam)
 
         delta_time: float = (pg.time.get_ticks() - previous_time)
         pg.display.set_caption(f'{delta_time}')
