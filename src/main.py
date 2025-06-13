@@ -182,6 +182,7 @@ class Game(Application):
     def OnWindowClose(self):
         self.renderer.delete()
         self.postProcessingPass.delete()
+        self.shadowPass.delete()
         print('Close from Game')
 
     def OnUpdate(self):

@@ -32,6 +32,10 @@ class ShadowPass:
     def unbind(self):
         self.shadowMap.unbind()
 
+    def delete(self):
+        self.shadowMap.delete()
+        self.shadowMapTexture.delete()
+
 class PostProcessingPass:
     def __init__(self, shaderProgram: glShaderProgram, style: int, width: int, height: int):
         glFramebuffer.initailizeQuad()
