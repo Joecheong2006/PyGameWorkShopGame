@@ -22,6 +22,8 @@ class GameObjectSystem:
 
     @staticmethod
     def ShutDown():
+        for obj in GameObjectSystem.modelObjects:
+            obj.delete()
         GameObjectSystem.objects = []
         GameObjectSystem.modelObjects = []
 
