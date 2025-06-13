@@ -58,13 +58,19 @@ class Animator:
         self.transitionIndex: int = -1
 
     def addTransition(self, startAnimName: str, endAnimName: str, duration: float, event = lambda : False, offset: float = 0):
+        if startAnimName not in self.target.animNameIndexMap or endAnimName not in self.target.animNameIndexMap:
+            return
         self.transitions.append(AnimationTransition(startAnimName, endAnimName, duration, event, offset))
 
     def addAnimationState(self, animName: str, timeScale: float = 1, loop: bool = True):
+        if animName not in self.target.animNameIndexMap:
+            return
         animIndex = self.target.animNameIndexMap[animName]
         self.animationStates[animName] = AnimationState(self.target.animations[animIndex], animName, timeScale, loop)
 
     def setDefaultState(self, animName: str, timeScale: float = 1, loop: bool = True):
+        if animName not in self.target.animNameIndexMap:
+            return
         animIndex = self.target.animNameIndexMap[animName]
         self.currentState = self.animationStates[animName] = AnimationState(self.target.animations[animIndex], animName, timeScale, loop)
     
