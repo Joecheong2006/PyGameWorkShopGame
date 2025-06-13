@@ -108,6 +108,21 @@ class glShaderProgram:
         self.fragment_src =fragment_src 
         self.program = create_program(vertex_src, fragment_src);
 
+    def setUniform3f(self, name: str, v3):
+        id = glGetUniformLocation(self.program, name)
+        if id != -1:
+            glUniform3f(id, *v3)
+
+    def setUniformMat4(self, name: str, count: int, mats, transpose = GL_FALSE):
+        id = glGetUniformLocation(self.program, name)
+        if id != -1:
+            glUniformMatrix4fv(id, count, transpose, mats)
+
+    def setUniform1i(self, name: str, val: int):
+        id = glGetUniformLocation(self.program, name)
+        if id != -1:
+            glUniform1i(id, val)
+
     def bind(self) -> None:
         glUseProgram(self.program)
 
@@ -132,19 +147,20 @@ class glTexture:
         format = GL_RGBA if image.mode == "RGBA" else GL_RGB        
         return glTexture(image.width, image.height, style, format, img_data)
 
-    def __init__(self, width: int, height: int, style: int, format: int = GL_RGBA, data = None):
+    def __init__(self, width: int, height: int, style: int, format: int = GL_RGBA, data = None, type = GL_UNSIGNED_BYTE, mipmap: bool = True, wrapStyle=GL_CLAMP_TO_EDGE):
         self._id = glGenTextures(1)
         self.width = width
         self.height = height
         self.bind()
-        glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data)
+        glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, type, data)
 
-        glGenerateMipmap(GL_TEXTURE_2D)
+        if mipmap:
+            glGenerateMipmap(GL_TEXTURE_2D)
 
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST)
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST if (mipmap and style == GL_NEAREST) else style)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, style)
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE)
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE)
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, wrapStyle)
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, wrapStyle)
 
     def bind(self, slot: int = 0) -> None:
         glActiveTexture(int(GL_TEXTURE0) + slot)
@@ -168,36 +184,41 @@ class glFramebuffer:
          1.0,  1.0,     1.0, 1.0
     ], dtype=np.float32)
 
-    def __init__(self, shaderProgram: glShaderProgram, screenBufferSize: tuple[int, int] = (0, 0)):
-        self.screenBufferSize = screenBufferSize
-        self.quad_vao = glGenVertexArrays(1)
-        self.quad_vbo = glGenBuffers(1)
+    def __init__(self, shaderProgram: glShaderProgram, width: int, height: int, quad=True):
+        self.width = width
+        self.height = height
         self.shader = shaderProgram
-        glBindVertexArray(self.quad_vao)
-        glBindBuffer(GL_ARRAY_BUFFER, self.quad_vbo)
-        glBufferData(GL_ARRAY_BUFFER, self.quad_vertices.nbytes, self.quad_vertices, GL_STATIC_DRAW)
-        glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * self.quad_vertices.itemsize, ctypes.c_void_p(0))
-        glEnableVertexAttribArray(0)
-        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * self.quad_vertices.itemsize, ctypes.c_void_p(8))
-        glEnableVertexAttribArray(1)
+        if quad:
+            self.quad_vao = glGenVertexArrays(1)
+            self.quad_vbo = glGenBuffers(1)
+            glBindVertexArray(self.quad_vao)
+            glBindBuffer(GL_ARRAY_BUFFER, self.quad_vbo)
+            glBufferData(GL_ARRAY_BUFFER, self.quad_vertices.nbytes, self.quad_vertices, GL_STATIC_DRAW)
+            glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * self.quad_vertices.itemsize, ctypes.c_void_p(0))
+            glEnableVertexAttribArray(0)
+            glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * self.quad_vertices.itemsize, ctypes.c_void_p(8))
+            glEnableVertexAttribArray(1)
 
         self.fbo = glGenFramebuffers(1)
-        self.rbo = glGenRenderbuffers(1);
-        glBindRenderbuffer(GL_RENDERBUFFER, self.rbo); 
-        glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, screenBufferSize[0], screenBufferSize[1]);
+        glBindFramebuffer(GL_FRAMEBUFFER, self.fbo)
         glBindRenderbuffer(GL_RENDERBUFFER, 0);
 
-    def attachTexture(self, texture: glTexture) -> None:
-        self.bind()
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texture._id, 0)
-        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, self.rbo)
-        self.unbind()
+    def genRenderBuffer(self, internalFormat):
+        self.rbo = glGenRenderbuffers(1);
+        glBindRenderbuffer(GL_RENDERBUFFER, self.rbo); 
+        glRenderbufferStorage(GL_RENDERBUFFER, internalFormat, self.width, self.height);
+
+    def attachRenderBuffer(self, attachment):
+        glFramebufferRenderbuffer(GL_FRAMEBUFFER, attachment, GL_RENDERBUFFER, self.rbo)
+
+    def attachTexture(self, texture: glTexture, attachment = GL_COLOR_ATTACHMENT0) -> None:
+        glFramebufferTexture2D(GL_FRAMEBUFFER, attachment, GL_TEXTURE_2D, texture._id, 0)
 
     def isCompleted(self) -> bool:
-        return glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE
+        return glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE
 
     def bind(self) -> None:
-        glBindFramebuffer(GL_FRAMEBUFFER, self.fbo)
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, self.fbo)
 
     def unbind(self) -> None:
         glBindFramebuffer(GL_FRAMEBUFFER, 0)
