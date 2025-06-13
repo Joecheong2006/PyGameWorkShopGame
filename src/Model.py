@@ -362,7 +362,8 @@ class Model:
         self.vbos.delete()
         glDeleteVertexArrays(1, [self.vao])
 
-    def render(self, shader: glShaderProgram, camera):
+    from Camera import Camera
+    def render(self, shader: glShaderProgram, camera: Camera):
         m = camera.projectionMat * camera.getViewMatrix()
         shader.setUniformMat4("vp", 1, m.to_list())
         if self.animating:
