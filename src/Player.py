@@ -51,8 +51,7 @@ class Player(GameObject):
         newMovementDir = horizentalDir + verticalDir
 
         if newMovementDir == glm.vec3(0):
-            self.facingDir = glm.lerp(self.facingDir, glm.vec3(0), 40 * deltaTime)
-            self.v = self.facingDir * 10
+            self.v = glm.lerp(self.v, glm.vec3(0), 40 * deltaTime)
         else:
             self.facingDir = glm.normalize(newMovementDir)
             self.v = glm.lerp(self.v, self.facingDir * 10, 15 * deltaTime)
