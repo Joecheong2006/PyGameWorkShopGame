@@ -35,12 +35,8 @@ class Player(GameObject):
         self.v = glm.vec3(0)
 
     def followCameraDirection(self, cam: Camera):
-        self.forward = -glm.vec3(cam.forward())
-        self.forward[1] = 0
-        self.forward = glm.normalize(self.forward)
-        self.right = glm.vec3(cam.right())
-        self.right[1] = 0
-        self.right = glm.normalize(self.right)
+        self.forward = -glm.normalize(glm.vec3(cam.forward()) * glm.vec3(1, 0, 1))
+        self.right = glm.normalize(glm.vec3(cam.right()) * glm.vec3(1, 0, 1))
 
     def OnUpdate(self, window: Window):
         deltaTime = window.deltaTime
@@ -55,14 +51,12 @@ class Player(GameObject):
         newMovementDir = horizentalDir + verticalDir
 
         if newMovementDir == glm.vec3(0):
-            self.v = glm.lerp(self.v, glm.vec3(0), 40 * deltaTime)
-            self.facingDir = glm.vec3(0)
-            return
-
-        self.facingDir = glm.normalize(newMovementDir)
-
-        self.v = glm.lerp(self.v, self.facingDir * 50, 15 * deltaTime)
+            self.facingDir = glm.lerp(self.facingDir, glm.vec3(0), 40 * deltaTime)
+            self.v = self.facingDir * 10
+        else:
+            self.facingDir = glm.normalize(newMovementDir)
+            self.v = glm.lerp(self.v, self.facingDir * 10, 15 * deltaTime)
 
         toRotation = glm.angleAxis(glm.atan(self.facingDir[0], self.facingDir[2]), glm.vec3(0, 1, 0))
-        self.transform.rotation = glm.slerp(self.transform.rotation, toRotation, 10 * deltaTime)
-        self.transform.position = glm.vec3(glm.lerp(self.transform.position, self.v * deltaTime + self.transform.position, 10 * deltaTime))
+        self.transform.rotation = glm.slerp(self.transform.rotation, toRotation, 12 * deltaTime)
+        self.transform.position = glm.vec3(glm.lerp(self.transform.position, self.v * deltaTime + self.transform.position, 50 * deltaTime))
