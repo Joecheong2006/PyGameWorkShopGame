@@ -12,7 +12,7 @@ class CameraController(GameObject):
         self.cameraRotated = False
         self.distance = 10.0
         self.max_pitch = 70
-        self.rotationBlendingSpeed = 40
+        self.rotationBlendingSpeed = 30
         self.positionBlendingSpeed = 50
 
     def OnStart(self):

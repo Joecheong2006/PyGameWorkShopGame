@@ -34,8 +34,8 @@ class Player(GameObject):
         def endPlayBack(animator: Animator):
             return glm.length(self.v) <= 0.1
 
-        self.animator.addTransition("Idle", "FastRunning", 0.12, startPlayBack)
-        self.animator.addTransition("FastRunning", "Idle", 0.14, endPlayBack)
+        self.animator.addTransition("Idle", "FastRunning", 0.2, startPlayBack)
+        self.animator.addTransition("FastRunning", "Idle", 0.1, endPlayBack)
 
         self.forward: glm.vec3 = glm.vec3(0, 0, 1)
         self.right: glm.vec3 = glm.vec3(1, 0, 0)
@@ -74,7 +74,7 @@ class Player(GameObject):
 
         self.facingDir = glm.normalize(newMovementDir)
 
-        self.v = glm.lerp(self.v, self.facingDir * 40, 55 * deltaTime)
+        self.v = glm.lerp(self.v, self.facingDir * 50, 15 * deltaTime)
 
         toRotation = glm.angleAxis(glm.atan(self.facingDir[0], self.facingDir[2]), glm.vec3(0, 1, 0))
         self.transform.rotation = glm.slerp(self.transform.rotation, toRotation, 10 * deltaTime)
