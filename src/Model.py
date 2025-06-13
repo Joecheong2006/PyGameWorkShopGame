@@ -89,7 +89,7 @@ model_frag_shader = """
         if (lightUV.z > 1.0)
             return 0.0;
         float bias = 0.003;
-        bias = max(0.003 * (1.0 - dot(N, -lightDir)), bias);
+        bias = max(0.003 * (1.0 - dot(N, -lightDir)), 0.0003);
         float depth = texture(shadowMap, lightUV.xy).r;
         return lightUV.z > depth + bias ? 0.5 : 1.0;
     }
@@ -151,7 +151,6 @@ def init_materials(gltf, layout):
             continue
         mat = gltf.materials[entry.materialIndex]
         pbr = mat.pbrMetallicRoughness
-        print(mat)
         m.roughness = pbr.roughnessFactor if pbr.roughnessFactor else 1.0
         if m.roughness == 1:
             m.shininess = 0
