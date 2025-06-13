@@ -144,8 +144,8 @@ class Game(Application):
 
         print(f'GL_MAX_UNIFORM_BLOCK_SIZE: {glGetIntegerv(GL_MAX_UNIFORM_BLOCK_SIZE)}')
 
-        self.player = Player()
-        self.scene = Model("res/TestScene3.glb")
+        Player()
+        Model("res/TestScene3.glb")
 
         glClearColor(0.1, 0.1, 0.1, 1)
 
@@ -164,7 +164,6 @@ class Game(Application):
     def OnWindowClose(self):
         self.renderer.delete()
         self.postProcessingPass.delete()
-        self.player.model.delete()
         print('Close from Game')
 
     def OnUpdate(self):
