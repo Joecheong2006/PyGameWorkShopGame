@@ -55,12 +55,12 @@ model_vert_shader = """
         }
 
         mat4 fullTransform = model * skinMatrix;
-        gl_Position = vp * fullTransform * vec4(aPos, 1.0);
-        fragPos = vec3(model * vec4(aPos, 1.0));
-        normal = normalize(mat3(inverseModel) * mat3(skinMatrix) * aNormal);
+        fragPos = vec3(fullTransform * vec4(aPos, 1.0));
+        gl_Position = vp * vec4(fragPos, 1.0);
+        normal = mat3(inverseModel) * mat3(skinMatrix) * aNormal;
         uv = aUV;
 
-        lightFragPos = lvp * fullTransform * vec4(aPos, 1.0);
+        lightFragPos = lvp * vec4(fragPos, 1.0);
     }
     """
 
@@ -69,11 +69,14 @@ model_frag_shader = """
 
     out vec4 FragColor;
 
+    uniform vec3 cameraPos;
+
     uniform vec3 color;
     uniform sampler2D diffuseTexture;
     uniform sampler2D shadowMap;
     uniform bool hasDiffuseTex;
     uniform vec3 lightDir;
+    uniform float shininess;
 
     in vec3 fragPos;
     in vec4 lightFragPos;
@@ -99,14 +102,12 @@ model_frag_shader = """
         vec3 lightProjPos = lightFragPos.xyz / lightFragPos.w;
         vec3 lightUV = lightProjPos * 0.5 + 0.5;
 
-        vec3 N = normal;
+        vec3 viewDir = normalize(cameraPos - fragPos);
+        vec3 N = normalize(normal);
+        vec3 L = -normalize(lightDir);
+        vec3 R = reflect(-L, N);
 
         float shadowFactor = getShadowFactor(lightUV, N);
-
-        float factor = dot(N, -normalize(lightDir));
-
-        // factor = factor > 0 ? ceil(factor * TOON_LEVEL) / TOON_LEVEL : 0;
-        factor = factor > 0 ? factor : 0;
 
         vec4 finalColor = vec4(1.0);
         if (!hasDiffuseTex) {
@@ -116,8 +117,15 @@ model_frag_shader = """
             finalColor = texture(diffuseTexture, uv);
         }
 
-        // finalColor.rgb *= (N + 1.0) * 0.5;
+        vec3 ambient = vec3(0.8);
+        vec3 diffuse = vec3(max(0, dot(N, L)));
+        float spec = 0;
+        if (shininess > 0.0)
+            spec = pow(max(dot(viewDir, R), 0.0), shininess);
+        vec3 specular = spec * vec3(1.0);
+
         finalColor.rgb = ceil(finalColor.rgb * TOON_LEVEL) / TOON_LEVEL;
+        finalColor.rgb *= (ambient + diffuse * 0.1 + specular * 0.1);
         FragColor = vec4(finalColor.rgb * shadowFactor, finalColor.a);
     }
     """
@@ -127,6 +135,8 @@ class Material:
         self.baseColor = [1, 1, 1]
         self.diffuseTexture: glTexture | None = None
         self.hasDiffuseTex: bool = False
+        self.roughness: float = 0
+        self.shininess: float = 32
 
 class PrimitiveEntry:
     def __init__(self):
@@ -143,9 +153,13 @@ def init_materials(gltf, layout):
         if entry.materialIndex == None:
             materials.append(m)
             continue
-        texture = gltf.materials[entry.materialIndex].pbrMetallicRoughness.baseColorTexture
-        color = gltf.materials[entry.materialIndex].pbrMetallicRoughness.baseColorFactor
-        emissiveColor = gltf.materials[entry.materialIndex].emissiveFactor
+        mat = gltf.materials[entry.materialIndex]
+        pbr = mat.pbrMetallicRoughness
+        m.roughness = pbr.roughnessFactor if pbr.roughnessFactor else 1.0
+        m.shininess = max(1.0, 1.0 / (m.roughness * m.roughness))
+
+        texture = pbr.baseColorTexture
+        color = pbr.baseColorFactor
         if color:
             m.baseColor = color[0:3]
         if texture:
@@ -212,7 +226,7 @@ def load_mesh_data(gltf) -> MeshData:
             entry.vertexOffset = int(len(V) / 3)
 
             I = np.append(I, load_accessor_buffer(gltf, primitive.indices))
-            N = np.append(V, load_accessor_buffer(gltf, primitive.attributes.NORMAL))
+            N = np.append(N, load_accessor_buffer(gltf, primitive.attributes.NORMAL))
             V = np.append(V, load_accessor_buffer(gltf, primitive.attributes.POSITION))
             if primitive.attributes.TEXCOORD_0:
                 UV = np.append(UV, load_accessor_buffer(gltf, primitive.attributes.TEXCOORD_0))
@@ -371,6 +385,7 @@ class Model:
     from Camera import Camera
     def render(self, shader: glShaderProgram, camera: Camera):
         m = camera.projectionMat * camera.getViewMatrix()
+
         shader.setUniformMat4("vp", 1, m.to_list())
         if self.animating:
             shader.setUniform1i("hasAnimation", 1)
@@ -378,11 +393,14 @@ class Model:
         else:
             shader.setUniform1i("hasAnimation", 0)
 
+        shader.setUniform3f("cameraPos", camera.position)
+
         transformMatrix = self.transform.getMatrix()
 
         glBindVertexArray(self.vao)
         for i, entry in enumerate(self.layout):
             shader.setUniform3f("color", self.materials[i].baseColor)
+            shader.setUniform1f("shininess", self.materials[i].shininess)
             model = self.modelMats[entry.meshIndex] * transformMatrix
             shader.setUniformMat4("model", 1, model.to_list())
             inverseModel = glm.transpose(glm.inverse(model))

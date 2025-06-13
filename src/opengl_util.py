@@ -113,6 +113,11 @@ class glShaderProgram:
         if id != -1:
             glUniform3f(id, *v3)
 
+    def setUniform1f(self, name: str, v):
+        id = glGetUniformLocation(self.program, name)
+        if id != -1:
+            glUniform1f(id, v)
+
     def setUniformMat4(self, name: str, count: int, mats, transpose = GL_FALSE):
         id = glGetUniformLocation(self.program, name)
         if id != -1:
