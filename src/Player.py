@@ -17,11 +17,8 @@ class Player(GameObject):
         self.animator.setDefaultState("Idle")
         self.animator.addAnimationState("FastRunning")
 
-        self.running: bool = False
-
         def startPlayBack(animator: Animator):
             return glm.length(self.v) > 0.1
-            return self.running
 
         def endPlayBack(animator: Animator):
             return glm.length(self.v) <= 0.1
@@ -48,8 +45,6 @@ class Player(GameObject):
     def OnUpdate(self, window: Window):
         deltaTime = window.deltaTime
         keys = window.keys
-
-        self.running = keys[pg.K_k]
 
         horizentalAxis = keys[pg.K_d] - keys[pg.K_a]
         horizentalDir = horizentalAxis * self.right
