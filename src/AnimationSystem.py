@@ -14,7 +14,7 @@ class AnimationSystem:
         AnimationSystem.animations = []
 
     @staticmethod
-    def AddAnimation(animator: Animator):
+    def AddAnimator(animator: Animator):
         AnimationSystem.animations.append(animator)
 
     @staticmethod
