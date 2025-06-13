@@ -123,39 +123,6 @@ class Game(Application):
                 )
         self.postProcessingPass = PostProcessingPass(postProcessingShader, GL_NEAREST, PIXEL_WIDTH, PIXEL_HEIGHT)
 
-        self.renderer = QuadRenderer(self.window)
-        self.quad_shader = glShaderProgram(
-                """
-                #version 330 core
-
-                layout(location = 0) in vec3 position;
-                layout(location = 1) in vec2 texCoord;
-
-                uniform mat4 m;
-
-                out vec2 uv; 
-
-                void main()
-                {
-                    gl_Position = m * vec4(position, 1);
-                    uv = texCoord;
-                }
-                """,
-                """
-                #version 330 core
-
-                layout(location = 0) out vec4 frag_color;
-                in vec2 uv;
-                uniform sampler2D screenTexture;
-
-                void main()
-                {
-                    vec4 color = texture(screenTexture, uv);
-                    frag_color = color;
-                }
-                """)
-        # self.wallpaper = glTexture.loadTexture('res/GreenGrass.png', GL_NEAREST)
-
         CameraController()
         self.cam = Camera(glm.vec3(0.0, 1.0, 3.0), self.window)
 
@@ -180,7 +147,6 @@ class Game(Application):
             pg.mouse.set_visible(not self.lockCursor)
 
     def OnWindowClose(self):
-        self.renderer.delete()
         self.postProcessingPass.delete()
         self.shadowPass.delete()
         print('Close from Game')
@@ -244,15 +210,6 @@ class Game(Application):
 
         delta_time: float = (pg.time.get_ticks() - previous_time)
         pg.display.set_caption(f'{delta_time}')
-
-        # ratio = self.wallpaper.height / self.wallpaper.width
-        # q = Quad((0.4, 0.4 * ratio), (0, 0), t)
-        # self.quad_shader.bind()
-        # self.wallpaper.bind(0)
-        # glUniform1i(glGetUniformLocation(self.quad_shader.program, "screenTexture"), 0)
-        # glUniformMatrix4fv(glGetUniformLocation(self.quad_shader.program, "m"), 1, GL_FALSE, m.to_list())
-        # self.renderer.drawQuad(q)
-        # self.renderer.submit()
 
         # Render fullscreen quad with post-processing
         glViewport(0, 0, self.window.width, self.window.height)
