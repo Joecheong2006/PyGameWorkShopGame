@@ -10,7 +10,7 @@ class CameraController(GameObject):
 
         self.offset = glm.vec3(0.0, 2.0, 0.0)
         self.cameraRotated = False
-        self.distance = 10.0
+        self.distance: float = 10.0
         self.max_pitch = 70
         self.rotationBlendingSpeed = 30
         self.positionBlendingSpeed = 50
@@ -31,6 +31,12 @@ class CameraController(GameObject):
         deltaTime = window.deltaTime
         if self.playerRef and self.camRef:
             keys = window.keys
+
+            roll = keys[pg.K_n] - keys[pg.K_m]
+            if roll != 0:
+                self.distance += roll * 0.1
+                self.distance = glm.clamp(self.distance, 10.0, 15.0)
+                self.camRef.calOrthogonalMat(OrthogonalCameraState(-self.distance, self.distance, -self.distance / self.camRef.aspect, self.distance / self.camRef.aspect, 0.1, 100))
 
             dx = keys[pg.K_j] - keys[pg.K_k]
             if dx != 0 and not self.cameraRotated:
