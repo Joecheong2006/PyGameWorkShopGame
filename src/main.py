@@ -210,8 +210,7 @@ class Game(Application):
         Model.shader.setUniform3f("lightDir", forward)
 
         # Render Scene
-        self.scene.render(Model.shader, self.cam)
-        self.player.model.render(Model.shader, self.cam)
+        GameObjectSystem.RenderScene()
 
         delta_time: float = (pg.time.get_ticks() - previous_time)
         pg.display.set_caption(f'{delta_time}')

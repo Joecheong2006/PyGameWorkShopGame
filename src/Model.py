@@ -298,6 +298,8 @@ class Model:
         Model.shader = glShaderProgram(model_vert_shader, model_frag_shader)
 
     def __init__(self, path: str):
+        from GameObjectSystem import GameObjectSystem
+        GameObjectSystem.AddModelObject(self)
         self.transform = Transform()
 
         gltf = pygltflib.GLTF2().load(path)
