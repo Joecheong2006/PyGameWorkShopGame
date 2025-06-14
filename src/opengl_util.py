@@ -166,6 +166,7 @@ class glTexture:
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, style)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, wrapStyle)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, wrapStyle)
+        glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, 1.0, 1.0, 1.0, 1.0)
 
     def bind(self, slot: int = 0) -> None:
         glActiveTexture(int(GL_TEXTURE0) + slot)
