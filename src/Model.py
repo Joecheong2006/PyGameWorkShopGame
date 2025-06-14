@@ -76,6 +76,7 @@ model_frag_shader = """
     uniform sampler2D shadowMap;
     uniform bool hasDiffuseTex;
     uniform vec3 lightDir;
+    uniform vec3 lightColor;
     uniform float shininess;
 
     in vec3 fragPos;
@@ -85,17 +86,22 @@ model_frag_shader = """
 
     #define TOON_LEVEL 6.0
 
-    float getShadowFactor(in vec3 lightUV, in vec3 N) {
-        if (lightUV.z > 1.0)
-            return 0.0;
-        float bias = 0.003;
-        bias = max(0.003 * (1.0 - dot(N, -lightDir)), 0.0003);
+    float getShadowFactor(in vec3 lightUV, in vec3 N, in vec3 L) {
+        if (lightUV.z > 1)
+            lightUV.z = 1;
+        float bias = 0.0001;
+        bias = max(0.003 * (1.0 - dot(N, L)), 0.0001);
         float depth = texture(shadowMap, lightUV.xy).r;
-        return lightUV.z > depth + bias ? 0.5 : 1.0;
+        float sunHeight = dot(vec3(0, 1, 0), L);
+        if (sunHeight < 0) {
+            return 1;
+        }
+        sunHeight = clamp(1 - sunHeight, 0.1, 1);
+        return lightUV.z > depth + bias ? 1 - pow(sunHeight - 1, 2) : 1.0;
     }
 
     void main() {
-        if (hasDiffuseTex && texture(diffuseTexture, uv).a < 0.1) {
+        if (hasDiffuseTex && texture(diffuseTexture, uv).a < 0.05) {
             discard;
         }
 
@@ -107,21 +113,35 @@ model_frag_shader = """
         vec3 L = -normalize(lightDir);
         vec3 R = reflect(-L, N);
 
-        float shadowFactor = getShadowFactor(lightUV, N);
+        float shadowFactor = getShadowFactor(lightUV, N, L);
 
         vec4 finalColor = hasDiffuseTex ? texture(diffuseTexture, uv) : vec4(color, 1);
 
-        vec3 ambient = vec3(0.7);
+        vec3 ambient = vec3(1);
         vec3 diffuse = vec3(max(0, dot(N, L)));
-        float spec = 0;
-        if (spec > 0) 
+        float spec = 0.1;
+        if (shininess != 0)
             spec = pow(max(dot(viewDir, R), 0.0), shininess);
         vec3 specular = spec * vec3(1.0);
 
+        float sunHeight = dot(vec3(0, 1, 0), L);
+        if (sunHeight >= 0.0) {
+            diffuse *= sunHeight;
+            specular *= sunHeight;
+        }
+        else {
+            diffuse = specular = vec3(0);
+            ambient *= 1.2;
+        }
+
         finalColor.rgb = ceil(finalColor.rgb * TOON_LEVEL) / TOON_LEVEL;
-        finalColor.rgb = finalColor.rgb * (ambient + diffuse * 0.2 + specular * 0.2);
-        finalColor.rgb *= shadowFactor;
+        finalColor.rgb = finalColor.rgb * (ambient * 0.7) + ceil(finalColor.rgb * (diffuse * 0.1 + specular * 0.15) * TOON_LEVEL) / TOON_LEVEL;
         finalColor.rgb = ceil(finalColor.rgb * TOON_LEVEL) / TOON_LEVEL;
+
+        float s = clamp(sunHeight, 0.2, 1);
+        vec3 lightCol = lightColor * (1 - pow(s - 1, 2));
+
+        finalColor.rgb *= shadowFactor * lightCol;
         FragColor = finalColor;
     }
     """
