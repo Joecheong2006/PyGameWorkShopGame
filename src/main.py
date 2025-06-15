@@ -232,7 +232,7 @@ class Game(Application):
                     sunHeight)
         else:
             lightColor = glm.lerp(
-                    glm.vec3(0.8, 0.5, 0.3), glm.vec3(0.2, 0.5, 0.6) * 0.5,
+                    glm.vec3(0.8, 0.5, 0.3), glm.vec3(0.2, 0.5, 0.5) * 0.5,
                     -sunHeight)
 
         Model.shader.setUniform3f("lightColor", lightColor)
