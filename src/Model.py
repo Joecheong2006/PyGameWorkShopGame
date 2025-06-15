@@ -84,8 +84,6 @@ model_frag_shader = """
     in vec3 normal;
     in vec2 uv;
 
-    #define TOON_LEVEL 6.0
-
     float getShadowFactor(in vec3 lightUV, in vec3 N, in vec3 L) {
         if (lightUV.z > 1)
             lightUV.z = 1;
@@ -126,17 +124,20 @@ model_frag_shader = """
 
         float sunHeight = dot(vec3(0, 1, 0), L);
         if (sunHeight >= 0.0) {
-            diffuse *= sunHeight;
-            specular *= sunHeight;
+            float s = 1 - pow(sunHeight - 1, 2);
+            diffuse *= s;
+            specular *= s;
         }
         else {
             diffuse = specular = vec3(0);
         }
 
+        float TOON_LEVEL = 6.0;
         finalColor.rgb = ceil(finalColor.rgb * TOON_LEVEL) / TOON_LEVEL;
+        TOON_LEVEL += (14 * (pow(sunHeight - 1, 2)));
         finalColor.rgb = finalColor.rgb * (ambient * 0.8) + ceil(finalColor.rgb * (diffuse * 0.1 + specular * 0.15) * TOON_LEVEL) / TOON_LEVEL;
 
-        float s = clamp(sunHeight, 0.2, 1);
+        float s = clamp(sunHeight, 0.5, 1);
         vec3 lightCol = lightColor * (1 - pow(s - 1, 2));
 
         finalColor.rgb *= shadowFactor * lightCol;
