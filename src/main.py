@@ -168,7 +168,8 @@ class Game(Application):
         self.shadowPass.bind()
 
         position = 5 * glm.vec3(glm.sin(t), 1, -glm.cos(t))
-        # position = 10 * glm.vec3(0, glm.sin(t), -glm.cos(t))
+        axis = glm.normalize(glm.vec3(1, 0, -1))
+        position = glm.vec3(glm.rotate(glm.mat4(1.0), t, axis) * glm.vec4(-10, 0, -10, 1.0))
         aspect = self.window.width / self.window.height
         ortho = glm.ortho(-20, 20, -20 / aspect, 20 / aspect, 0.1, 100)
         forward = -glm.normalize(position)
@@ -210,12 +211,20 @@ class Game(Application):
         Model.shader.setUniformMat4("lvp", 1, lvp)
         Model.shader.setUniform3f("lightDir", forward)
 
-        c = glm.sin(t) * 0.5 + 0.5
+        sunHeight = glm.dot(glm.vec3(0, 1, 0), -forward)
+
         lightColor = glm.vec3(0.8, 0.5, 0.3)
         lightColor = glm.vec3(1)
-        lightColor = glm.lerp(
-                glm.vec3(0.8, 0.5, 0.3), glm.vec3(1),
-                glm.dot(glm.vec3(0, 1, 0), -forward))
+
+        if sunHeight > 0:
+            lightColor = glm.lerp(
+                    glm.vec3(0.8, 0.5, 0.3), glm.vec3(1),
+                    sunHeight)
+        else:
+            lightColor = glm.lerp(
+                    glm.vec3(0.8, 0.5, 0.3), glm.vec3(0.2, 0.4, 0.8) * 0.5,
+                    -sunHeight)
+
         Model.shader.setUniform3f("lightColor", lightColor)
 
         # Render Scene
