@@ -57,6 +57,8 @@ class Animator:
         self.isTransitioning: bool = False
         self.transitionIndex: int = -1
 
+        self.variables = {}
+
     def addTransition(self, startAnimName: str, endAnimName: str, duration: float, event = lambda : False, offset: float = 0):
         if startAnimName not in self.target.animNameIndexMap or endAnimName not in self.target.animNameIndexMap:
             return

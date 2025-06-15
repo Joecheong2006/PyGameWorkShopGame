@@ -13,19 +13,6 @@ class Player(GameObject):
 
         self.model = Model("res/M.glb")
 
-        self.animator = Animator(self.model)
-        self.animator.setDefaultState("Idle")
-        self.animator.addAnimationState("FastRunning")
-
-        def startPlayBack(animator: Animator):
-            return glm.length(self.v) > 0.1
-
-        def endPlayBack(animator: Animator):
-            return glm.length(self.v) <= 0.1
-
-        self.animator.addTransition("Idle", "FastRunning", 0.2, startPlayBack)
-        self.animator.addTransition("FastRunning", "Idle", 0.1, endPlayBack)
-
         self.forward: glm.vec3 = glm.vec3(0, 0, 1)
         self.right: glm.vec3 = glm.vec3(1, 0, 0)
         self.up: glm.vec3 = glm.vec3(0, 1, 0)
@@ -34,6 +21,33 @@ class Player(GameObject):
         self.facingDir = glm.vec3(0)
         self.v = glm.vec3(0)
 
+        self.animator = Animator(self.model)
+        self.animator.setDefaultState("Idle")
+        self.animator.addAnimationState("FastRunning")
+        self.animator.addAnimationState("Sitting")
+
+        self.animator.variables["sitTransition"] = False
+
+        def IdleToRun(animator: Animator):
+            return glm.length(self.v) > 0.1
+
+        def RunToIdle(animator: Animator):
+            return glm.length(self.v) <= 0.1
+
+        self.sitting = False
+        def StartSitting(animator: Animator):
+            self.animator.variables["sitTransition"] = self.sitting
+            return self.sitting
+
+        def EndSitting(animator: Animator):
+            self.animator.variables["sitTransition"] = self.sitting
+            return not self.sitting
+
+        self.animator.addTransition("Idle", "FastRunning", 0.2, IdleToRun)
+        self.animator.addTransition("FastRunning", "Idle", 0.1, RunToIdle)
+        self.animator.addTransition("Idle", "Sitting", 0.3, StartSitting)
+        self.animator.addTransition("Sitting", "Idle", 0.3, EndSitting)
+
     def followCameraDirection(self, cam: Camera):
         self.forward = -glm.normalize(glm.vec3(cam.forward()) * glm.vec3(1, 0, 1))
         self.right = glm.normalize(glm.vec3(cam.right()) * glm.vec3(1, 0, 1))
@@ -41,6 +55,10 @@ class Player(GameObject):
     def OnUpdate(self, window: Window):
         deltaTime = window.deltaTime
         keys = window.keys
+
+        self.sitting = keys[pg.K_SPACE]
+        if self.animator.variables["sitTransition"]:
+            return
 
         horizentalAxis = keys[pg.K_d] - keys[pg.K_a]
         horizentalDir = horizentalAxis * self.right
