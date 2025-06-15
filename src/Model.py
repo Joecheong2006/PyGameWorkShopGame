@@ -134,7 +134,7 @@ model_frag_shader = """
 
         float TOON_LEVEL = 6.0;
         finalColor.rgb = ceil(finalColor.rgb * TOON_LEVEL) / TOON_LEVEL;
-        TOON_LEVEL += (14 * (pow(sunHeight - 1, 2)));
+        TOON_LEVEL += (54 * (pow(sunHeight - 1, 2)));
         finalColor.rgb = finalColor.rgb * (ambient * 0.8) + ceil(finalColor.rgb * (diffuse * 0.1 + specular * 0.15) * TOON_LEVEL) / TOON_LEVEL;
 
         float s = clamp(sunHeight, 0.5, 1);
@@ -295,7 +295,7 @@ def load_animations(gltf):
     for skin in gltf.skins:
         joints = skin.joints
         inverse_bind_matrices = load_accessor_buffer(gltf, skin.inverseBindMatrices)
-        inverse_bind_matrices = inverse_bind_matrices.reshape((-1, 16))
+        inverse_bind_matrices = np.array([m.reshape((4,4)).T for m in inverse_bind_matrices])
         assert inverse_bind_matrices.dtype == np.float32
         skins.append(Skin(joints, inverse_bind_matrices))
 
