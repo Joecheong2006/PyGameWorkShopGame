@@ -7,7 +7,7 @@ from PIL import Image
 import io
 
 from collections import namedtuple
-MeshData = namedtuple('MeshesData', 'primitivesLayout indices vertices normals uvs boneIDs weights')
+MeshData = namedtuple('MeshData', 'primitivesLayout indices vertices normals uvs boneIDs weights')
 AnimationSampler = namedtuple('AnimationSampler', 'interpolation keyframe_times keyframe_values')
 AnimationChannel = namedtuple('AnimationChannel', 'sampler node path')
 Animation = namedtuple('Animation', 'name samplers channels duration')
