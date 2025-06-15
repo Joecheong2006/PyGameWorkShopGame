@@ -157,17 +157,26 @@ class Game(Application):
     def OnUpdate(self):
         self.window.dispatchEvent(self.eventHandler)
 
-        previous_time = pg.time.get_ticks()
+        title = ""
 
+        previous_time = pg.time.get_ticks()
         AnimationSystem.Update(self.window.deltaTime)
+        delta_time: float = (pg.time.get_ticks() - previous_time)
+        title += f"anim: {delta_time}ms "
+
+        previous_time = pg.time.get_ticks()
         GameObjectSystem.Update(self.window)
+        delta_time: float = (pg.time.get_ticks() - previous_time)
+        title += f"obj: {delta_time}ms "
+
+        previous_time = pg.time.get_ticks()
 
         t = pg.time.get_ticks() * 0.0003
 
         # Shadow Pass
         self.shadowPass.bind()
 
-        position = 5 * glm.vec3(glm.sin(t), 1, -glm.cos(t))
+        # position = 5 * glm.vec3(glm.sin(t), 1, -glm.cos(t))
         axis = glm.normalize(glm.vec3(1, 0, -1))
         position = glm.vec3(glm.rotate(glm.mat4(1.0), t, axis) * glm.vec4(-10, 0, -10, 1.0))
         aspect = self.window.width / self.window.height
@@ -187,6 +196,7 @@ class Game(Application):
 
         self.shadowPass.unbind()
 
+        # Depth Pass
         self.postProcessingPass.depthMap.bind()
         glViewport(0, 0, self.postProcessingPass.depthMap.width, self.postProcessingPass.depthMap.height)
         glClear(GL_DEPTH_BUFFER_BIT)
@@ -222,7 +232,7 @@ class Game(Application):
                     sunHeight)
         else:
             lightColor = glm.lerp(
-                    glm.vec3(0.8, 0.5, 0.3), glm.vec3(0.2, 0.4, 0.8) * 0.5,
+                    glm.vec3(0.8, 0.5, 0.3), glm.vec3(0.2, 0.5, 0.6) * 0.5,
                     -sunHeight)
 
         Model.shader.setUniform3f("lightColor", lightColor)
@@ -231,7 +241,8 @@ class Game(Application):
         GameObjectSystem.RenderScene(Model.shader)
 
         delta_time: float = (pg.time.get_ticks() - previous_time)
-        pg.display.set_caption(f'{delta_time}')
+        title += f"render: {delta_time}ms "
+        pg.display.set_caption(title)
 
         # Render fullscreen quad with post-processing
         glViewport(0, 0, self.window.width, self.window.height)
