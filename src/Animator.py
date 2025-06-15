@@ -11,6 +11,7 @@ class AnimationState:
         self.timeScale: float = timeScale
         self.loop: bool = loop
         self.finished: bool = False
+        self.frameIndex = 0
 
     def calculateAnimation(self, target: Model):
         if self.anim == None:
@@ -21,7 +22,9 @@ class AnimationState:
             keyframe_times = sampler.keyframe_times
             keyframe_values = sampler.keyframe_values
 
-            interpolated_value = interp_anim_vec(channel.path, self.time, sampler.interpolation, keyframe_times, keyframe_values)
+            tmp = [self.frameIndex]
+            interpolated_value = interp_anim_vec(channel.path, self.time, sampler.interpolation, keyframe_times, keyframe_values, tmp)
+            self.frameIndex = tmp[0]
 
             if channel.path == 'translation':
                 target.nodes[channel.node].translation = interpolated_value
@@ -35,12 +38,14 @@ class AnimationState:
         if self.time > self.duration:
             if self.loop:
                 self.time = np.fmod(self.time, self.duration)
+                self.frameIndex = 0
             else:
                 self.time = self.duration
                 self.finished = True
 
     def reset(self):
         self.time = 0
+        self.frameIndex = 0
         self.finished = False
 
 class Animator:
@@ -136,24 +141,26 @@ def calc_local_transform(node):
     transform = translation @ rotation @ scale
     return np.array(transform)
 
-def interp_anim_vec(path, t: float, interpolation, keyframe_times, keyframe_values):
-    a,b,t = get_lerp(t, keyframe_times)
-    a = glm.quat(keyframe_values[a, [3,0,1,2]]) if path == 'rotation' else glm.vec3(keyframe_values[a])
-    b = glm.quat(keyframe_values[b, [3,0,1,2]]) if path == 'rotation' else glm.vec3(keyframe_values[b])
-    if interpolation == 'STEP':
+def interp_anim_vec(path, t: float, interpolation, keyframe_times, keyframe_values, frameIndex):
+    a, b, t = get_lerp(t, keyframe_times, frameIndex)
+    a = glm.quat(keyframe_values[a, [3,0,1,2]]) if path[0] == 'r' else glm.vec3(keyframe_values[a])
+    b = glm.quat(keyframe_values[b, [3,0,1,2]]) if path[0] == 'r' else glm.vec3(keyframe_values[b])
+    if interpolation[0] == 'S':
         return a
-    elif interpolation == 'LINEAR':
-        if path == 'rotation':
+    elif interpolation[0] == 'L':
+        if path[0] == 'r':
             return glm.slerp(a, b, t)
         return glm.lerp(a, b, t)
     assert False, 'bad interpolation'
 
-
-def get_lerp(t: float, keyframe_times):
-    for i, (t0, t1) in enumerate(zip(np.append([0.0], keyframe_times[:-1]), keyframe_times)):
-        t1 = float(t1)
+def get_lerp(t: float, keyframe_times, frameIndex):
+    a = np.insert(np.array(keyframe_times, dtype=np.float32), 0, 0)
+    print(frameIndex[0])
+    for i in range(frameIndex[0], len(a) - 1):
+        t0, t1, = a[i], a[i + 1]
         if t0 <= t < t1:
-            j = (i+1) % len(keyframe_times)
+            frameIndex[0] = i
+            j = (i + 1) % len(keyframe_times)
             t = (t - t0) / (t1 - t0)
             return i, j, t
     return 0, 0, 0
@@ -178,7 +185,9 @@ class AnimationTransition:
             keyframe_times = sampler.keyframe_times
             keyframe_values = sampler.keyframe_values
 
-            interpolated_value = interp_anim_vec(channel.path, endAnimState.time, sampler.interpolation, keyframe_times, keyframe_values)
+            tmp = [endAnimState.frameIndex]
+            interpolated_value = interp_anim_vec(channel.path, endAnimState.time, sampler.interpolation, keyframe_times, keyframe_values, tmp)
+            endAnimState.frameIndex = tmp[0]
 
             if channel.path == 'translation':
                 animator.target.nodes[channel.node].translation = glm.lerp(animator.target.nodes[channel.node].translation, interpolated_value, self.currentDuration)
