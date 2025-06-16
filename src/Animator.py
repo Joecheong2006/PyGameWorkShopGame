@@ -11,7 +11,7 @@ class AnimationState:
         self.timeScale: float = timeScale
         self.loop: bool = loop
         self.finished: bool = False
-        self.frameIndexes = [0] * len(self.anim.channels)
+        self.frameIndexes: list[int] = [0] * len(self.anim.channels)
 
     def calculateAnimation(self, target: Model):
         if self.anim == None:
@@ -143,7 +143,7 @@ def calc_local_transform(node):
         scale = glm.scale(scale, glm.vec3(node.scale))
     return np.array(translation @ rotation @ scale)
 
-def interp_anim_vec(path, t: float, interpolation, keyframe_times, keyframe_values, frameIndex):
+def interp_anim_vec(path: str, t: float, interpolation: str, keyframe_times, keyframe_values, frameIndex):
     aIndex, b, t = get_lerp(t, keyframe_times, frameIndex)
     a = glm.quat(keyframe_values[aIndex, [3,0,1,2]]) if path[0] == 'r' else glm.vec3(keyframe_values[aIndex])
     b = glm.quat(keyframe_values[b, [3,0,1,2]]) if path[0] == 'r' else glm.vec3(keyframe_values[b])
