@@ -2,7 +2,7 @@ import pygame as pg
 from Application import *
 from opengl_util import *
 from QuadRenderer import *
-from RenderPipeline import PostProcessingPass, ShadowPass
+from RenderPipeline import PostProcessingPass, DepthPass, ShadowPass
 from Camera import *
 from CameraController import *
 
@@ -83,6 +83,8 @@ class Game(Application):
 
         self.shadowPass = ShadowPass(shadowMapShader, 2048, 2048)
 
+        self.depthPass = DepthPass(PIXEL_WIDTH, PIXEL_HEIGHT)
+
         postProcessingShader = glShaderProgram(
                 """
                 #version 330 core
@@ -112,11 +114,15 @@ class Game(Application):
                     depth += texture(depthMapTexture, TexCoord + vec2(0, -1) * texelSize).r;
                     depth += texture(depthMapTexture, TexCoord + vec2(1, 0) * texelSize).r;
                     depth += texture(depthMapTexture, TexCoord + vec2(-1, 0) * texelSize).r;
-                    depth /= 4.0;
+                    depth /= 4;
 
-                    float diff = 1;
-                    if (depth - depthOrg > 0.001) {
-                        diff = depth - depthOrg;
+                    vec3 diff = vec3(1);
+                    if (depth - depthOrg > 0.0001) {
+                        diff = texture(screenTexture, TexCoord + vec2(0, 1) * texelSize).rgb;
+                        diff += texture(screenTexture, TexCoord + vec2(0, -1) * texelSize).rgb;
+                        diff += texture(screenTexture, TexCoord + vec2(1, 0) * texelSize).rgb;
+                        diff += texture(screenTexture, TexCoord + vec2(-1, 0) * texelSize).rgb;
+                        diff /= 4;
                     }
 
                     vec3 color = texture(screenTexture, TexCoord).rgb * diff;
@@ -197,18 +203,10 @@ class Game(Application):
         self.shadowPass.unbind()
 
         # Depth Pass
-        self.postProcessingPass.depthMap.bind()
-        glViewport(0, 0, self.postProcessingPass.depthMap.width, self.postProcessingPass.depthMap.height)
-        glClear(GL_DEPTH_BUFFER_BIT)
-
-        self.postProcessingPass.depthMap.shader.bind()
-        cam = GameObjectSystem.mainCamera
-        if cam:
-            vp = cam.projectionMat * cam.getViewMatrix()
-            self.shadowPass.shadowMap.shader.setUniformMat4("lvp", 1, vp.to_list())
-            GameObjectSystem.RenderScene(self.postProcessingPass.depthMap.shader)
-
-        self.postProcessingPass.depthMap.unbind()
+        self.depthPass.bind()
+        self.depthPass.depthMap.shader.bind()
+        GameObjectSystem.RenderScene(self.depthPass.depthMap.shader)
+        self.depthPass.depthMap.unbind()
 
         # Render triangle to framebuffer
         self.postProcessingPass.bind()
@@ -237,7 +235,7 @@ class Game(Application):
 
         Model.shader.setUniform3f("lightColor", lightColor)
 
-        # Render Scene
+        # Render Scene to screen texture
         GameObjectSystem.RenderScene(Model.shader)
 
         delta_time: float = (pg.time.get_ticks() - previous_time)
@@ -247,6 +245,12 @@ class Game(Application):
         # Render fullscreen quad with post-processing
         glViewport(0, 0, self.window.width, self.window.height)
         self.postProcessingPass.unbind()
+        self.postProcessingPass.enable()
+
+        # # binding depth map
+        self.depthPass.depthMapTexture.bind(1)
+        self.postProcessingPass.fb.shader.setUniform1i("depthMapTexture", 1)
+
         self.postProcessingPass.render()
 
         if self.lockCursor:
