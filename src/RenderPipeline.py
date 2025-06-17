@@ -36,12 +36,13 @@ class ShadowPass:
         self.shadowMap.delete()
         self.shadowMapTexture.delete()
 
-class DepthPass:
+class DepthNormalPass:
     def __init__(self, width: int, height: int):
         depthShader = glShaderProgram(
                 """
                 #version 330 core
                 layout (location = 0) in vec3 aPos;
+                layout (location = 1) in vec3 aNormal;
                 layout (location = 2) in vec2 aUV;
                 layout (location = 3) in uvec4 aJointIDs;
                 layout (location = 4) in vec4 aWeights;
@@ -52,6 +53,7 @@ class DepthPass:
                 uniform mat4 jointMatrices[100];
                 uniform bool hasAnimation;
                 out vec2 uv;
+                out vec3 normal;
 
                 void main() {
                     mat4 skinMatrix = mat4(1);
@@ -64,30 +66,34 @@ class DepthPass:
                     }
                     gl_Position = vp * model * skinMatrix * vec4(aPos, 1.0);
                     uv = aUV;
+                    normal = aNormal;
                 }
                 """,
                 """
                 #version 330 core
+                layout(location = 0) out vec4 fragColor;
 
                 uniform sampler2D diffuseTexture;
                 uniform bool hasDiffuseTex;
                 in vec2 uv;
+                in vec3 normal;
 
                 void main() {
                     if (hasDiffuseTex && texture(diffuseTexture, uv).a < 0.1) {
                         discard;
                     }
+                    fragColor = vec4(normal * 0.5 + 0.5, gl_FragCoord.z);
                 }
                 """)
 
         self.depthMap = glFramebuffer(depthShader, width, height)
+        self.depthMap.bind()
+        self.depthMap.genRenderBuffer(GL_DEPTH24_STENCIL8)
+        self.depthMap.attachRenderBuffer(GL_DEPTH_STENCIL_ATTACHMENT)
         self.depthMapTexture = glTexture(
                 self.depthMap.width, self.depthMap.height, 
-                GL_NEAREST, format=GL_DEPTH_COMPONENT, type=GL_FLOAT, mipmap=False, wrapStyle=GL_CLAMP_TO_BORDER)
-        self.depthMap.attachTexture(self.depthMapTexture, attachment=GL_DEPTH_ATTACHMENT)
-
-        glDrawBuffer(GL_NONE)
-        glReadBuffer(GL_NONE)
+                GL_NEAREST, type=GL_FLOAT, mipmap=False, wrapStyle=GL_CLAMP_TO_BORDER)
+        self.depthMap.attachTexture(self.depthMapTexture)
 
         if not self.depthMap.isCompleted():
             raise RuntimeError("Imcompleted framebuffer")
@@ -97,7 +103,12 @@ class DepthPass:
     def bind(self):
         self.depthMap.bind()
         glViewport(0, 0, self.depthMap.width, self.depthMap.height)
-        glClear(GL_DEPTH_BUFFER_BIT)
+        glClear(int(GL_COLOR_BUFFER_BIT) | int(GL_DEPTH_BUFFER_BIT))
+        glDisable(GL_BLEND);
+
+    def unbind(self):
+        glEnable(GL_BLEND);
+        self.depthMap.unbind()
 
 class PostProcessingPass:
     def __init__(self, shaderProgram: glShaderProgram, style: int, width: int, height: int):
