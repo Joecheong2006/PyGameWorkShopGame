@@ -131,13 +131,11 @@ model_frag_shader = """
             diffuse = specular = vec3(0);
         }
 
-        float TOON_LEVEL = 6.0;
-        finalColor.rgb = ceil(finalColor.rgb * TOON_LEVEL) / TOON_LEVEL;
-        TOON_LEVEL += (54 * (pow(sunHeight - 1, 2)));
-        finalColor.rgb = finalColor.rgb * (ambient * 0.8) + ceil(finalColor.rgb * (diffuse * 0.1 + specular * 0.15) * TOON_LEVEL) / TOON_LEVEL;
+        float TOON_LEVEL = 6.0 + 54 * (pow(sunHeight - 1, 2));
+        finalColor.rgb = finalColor.rgb * (ambient * 0.7) + ceil(finalColor.rgb * (diffuse * 0.1 + specular * 0.2) * TOON_LEVEL) / TOON_LEVEL;
 
         float s = clamp(sunHeight, 0.5, 1);
-        vec3 lightCol = lightColor * (1 - pow(s - 1, 2));
+        vec3 lightCol = lightColor * s;
 
         finalColor.rgb *= shadowFactor * lightCol;
         FragColor = finalColor;
