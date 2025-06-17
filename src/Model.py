@@ -94,7 +94,7 @@ model_frag_shader = """
             return 1;
         }
         sunHeight = clamp(1 - sunHeight, 0.1, 1);
-        return lightUV.z > depth + bias ? 1 - pow(sunHeight - 1, 4) : 1.0;
+        return lightUV.z > depth + bias ? 1 - pow(sunHeight - 1, 2) : 1.0;
     }
 
     void main() {
