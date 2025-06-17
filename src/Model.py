@@ -87,8 +87,7 @@ model_frag_shader = """
     float getShadowFactor(in vec3 lightUV, in vec3 N, in vec3 L) {
         if (lightUV.z > 1)
             lightUV.z = 1;
-        float bias = 0.0001;
-        bias = max(0.003 * (1.0 - abs(dot(N, L))), 0.0003);
+        float bias = max(0.0003, mix(0.003, 0, abs(dot(N, L))));
         float depth = texture(shadowMap, lightUV.xy).r;
         float sunHeight = dot(vec3(0, 1, 0), L);
         if (sunHeight < 0) {
