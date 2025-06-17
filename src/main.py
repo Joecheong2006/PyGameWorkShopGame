@@ -208,7 +208,7 @@ class Game(Application):
         GameObjectSystem.RenderScene(self.depthPass.depthMap.shader)
         self.depthPass.depthMap.unbind()
 
-        # Render triangle to framebuffer
+        # Render scene to framebuffer
         self.postProcessingPass.bind()
         glClearColor(0.1, 0.1, 0.1, 1.0)
 
