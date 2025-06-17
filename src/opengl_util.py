@@ -152,12 +152,12 @@ class glTexture:
         format = GL_RGBA if image.mode == "RGBA" else GL_RGB        
         return glTexture(image.width, image.height, style, format, img_data)
 
-    def __init__(self, width: int, height: int, style: int, format: int = GL_RGBA, data = None, type = GL_UNSIGNED_BYTE, mipmap: bool = True, wrapStyle=GL_CLAMP_TO_EDGE):
+    def __init__(self, width: int, height: int, style: int, format: int = GL_RGBA, data = None, type = GL_UNSIGNED_BYTE, mipmap: bool = True, wrapStyle=GL_CLAMP_TO_EDGE, internal = None):
         self._id = glGenTextures(1)
         self.width = width
         self.height = height
         self.bind()
-        glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, type, data)
+        glTexImage2D(GL_TEXTURE_2D, 0, format if internal == None else internal, width, height, 0, format, type, data)
 
         if mipmap:
             glGenerateMipmap(GL_TEXTURE_2D)
