@@ -92,7 +92,7 @@ class DepthNormalPass:
         self.depthMap.attachRenderBuffer(GL_DEPTH_STENCIL_ATTACHMENT)
         self.depthMapTexture = glTexture(
                 self.depthMap.width, self.depthMap.height, 
-                GL_NEAREST, type=GL_FLOAT, mipmap=False, wrapStyle=GL_CLAMP_TO_BORDER)
+                GL_NEAREST, type=GL_FLOAT, mipmap=False, wrapStyle=GL_CLAMP_TO_BORDER, internal=GL_RGBA16F)
         self.depthMap.attachTexture(self.depthMapTexture)
 
         if not self.depthMap.isCompleted():

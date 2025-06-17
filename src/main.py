@@ -120,7 +120,7 @@ class Game(Application):
                     vec3 normalUp = texture(depthMapTexture, TexCoord + vec2(0, 1) * texelSize).rgb * 2 - 1;
 
                     vec3 diff = vec3(1);
-                    if (depth - depthOrg > 0.0001 || dot(normalUp, normalOrg) < 0.3) {
+                    if (depth - depthOrg > 0.0002 || dot(normalUp, normalOrg) < 0.3) {
                         diff = texture(screenTexture, TexCoord + vec2(0, 1) * texelSize).rgb;
                         diff += texture(screenTexture, TexCoord + vec2(0, -1) * texelSize).rgb;
                         diff += texture(screenTexture, TexCoord + vec2(1, 0) * texelSize).rgb;
@@ -234,7 +234,7 @@ class Game(Application):
         else:
             nightColor = glm.vec3(0.2, 0.5, 0.5);
             lightColor = glm.lerp(
-                    glm.vec3(0.8, 0.5, 0.3), nightColor * 0.7,
+                    glm.vec3(0.8, 0.5, 0.3), nightColor * 0.8,
                     -sunHeight)
 
         Model.shader.setUniform3f("lightColor", lightColor)
