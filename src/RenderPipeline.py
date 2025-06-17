@@ -36,24 +36,8 @@ class ShadowPass:
         self.shadowMap.delete()
         self.shadowMapTexture.delete()
 
-class PostProcessingPass:
-    def __init__(self, shaderProgram: glShaderProgram, style: int, width: int, height: int):
-        glFramebuffer.initailizeQuad()
-        self.fb = glFramebuffer(shaderProgram, width, height)
-        self.fb.bind()
-        self.fb.genRenderBuffer(GL_DEPTH24_STENCIL8)
-        self.fb.attachRenderBuffer(GL_DEPTH_STENCIL_ATTACHMENT)
-        self.screenTexture = glTexture(self.fb.width, self.fb.height, style)
-        self.fb.attachTexture(self.screenTexture)
-
-        if not self.fb.isCompleted():
-            raise RuntimeError("Imcompleted framebuffer")
-
-        self.fb.unbind()
-
-        self.fb.bind()
-
-
+class DepthPass:
+    def __init__(self, width: int, height: int):
         depthShader = glShaderProgram(
                 """
                 #version 330 core
@@ -62,7 +46,7 @@ class PostProcessingPass:
                 layout (location = 3) in uvec4 aJointIDs;
                 layout (location = 4) in vec4 aWeights;
 
-                uniform mat4 lvp;
+                uniform mat4 vp;
                 uniform mat4 model;
 
                 uniform mat4 jointMatrices[100];
@@ -78,7 +62,7 @@ class PostProcessingPass:
                         aWeights.z * jointMatrices[aJointIDs.z] +
                         aWeights.w * jointMatrices[aJointIDs.w];
                     }
-                    gl_Position = lvp * model * skinMatrix * vec4(aPos, 1.0);
+                    gl_Position = vp * model * skinMatrix * vec4(aPos, 1.0);
                     uv = aUV;
                 }
                 """,
@@ -109,6 +93,26 @@ class PostProcessingPass:
             raise RuntimeError("Imcompleted framebuffer")
 
         self.depthMap.unbind()
+    
+    def bind(self):
+        self.depthMap.bind()
+        glViewport(0, 0, self.depthMap.width, self.depthMap.height)
+        glClear(GL_DEPTH_BUFFER_BIT)
+
+class PostProcessingPass:
+    def __init__(self, shaderProgram: glShaderProgram, style: int, width: int, height: int):
+        glFramebuffer.initailizeQuad()
+        self.fb = glFramebuffer(shaderProgram, width, height)
+        self.fb.bind()
+        self.fb.genRenderBuffer(GL_DEPTH24_STENCIL8)
+        self.fb.attachRenderBuffer(GL_DEPTH_STENCIL_ATTACHMENT)
+        self.screenTexture = glTexture(self.fb.width, self.fb.height, style)
+        self.fb.attachTexture(self.screenTexture)
+
+        if not self.fb.isCompleted():
+            raise RuntimeError("Imcompleted framebuffer")
+
+        self.fb.unbind()
 
     def bind(self):
         self.fb.bind()
@@ -118,19 +122,17 @@ class PostProcessingPass:
     def unbind(self):
         self.fb.unbind()
 
-    def render(self):
-        glClear(int(GL_COLOR_BUFFER_BIT) | int(GL_DEPTH_BUFFER_BIT))
+    def enable(self):
         glUseProgram(self.fb.shader.program)
         glBindVertexArray(glFramebuffer.quad_vao)
+
+    def render(self):
+        glClear(int(GL_COLOR_BUFFER_BIT) | int(GL_DEPTH_BUFFER_BIT))
         self.screenTexture.bind(0)
         glUniform1i(glGetUniformLocation(self.fb.shader.program, "screenTexture"), 0)
-        self.depthMapTexture.bind(1)
-        glUniform1i(glGetUniformLocation(self.fb.shader.program, "depthMapTexture"), 1)
         glDrawArrays(GL_TRIANGLES, 0, 6)
 
     def delete(self):
         self.fb.delete()
         self.screenTexture.delete()
-        self.depthMap.delete()
-        self.depthMapTexture.delete()
         glFramebuffer.deleteQuad()
