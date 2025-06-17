@@ -2,7 +2,7 @@ import pygame as pg
 from Application import *
 from opengl_util import *
 from QuadRenderer import *
-from RenderPipeline import PostProcessingPass, DepthPass, ShadowPass
+from RenderPipeline import PostProcessingPass, DepthNormalPass, ShadowPass
 from Camera import *
 from CameraController import *
 
@@ -83,7 +83,7 @@ class Game(Application):
 
         self.shadowPass = ShadowPass(shadowMapShader, 2048, 2048)
 
-        self.depthPass = DepthPass(PIXEL_WIDTH, PIXEL_HEIGHT)
+        self.depthPass = DepthNormalPass(PIXEL_WIDTH, PIXEL_HEIGHT)
 
         postProcessingShader = glShaderProgram(
                 """
@@ -108,16 +108,19 @@ class Game(Application):
                 void main()
                 {
                     float depth = 0;
-                    float depthOrg = texture(depthMapTexture, TexCoord).r;
+                    float depthOrg = texture(depthMapTexture, TexCoord).a;
                     vec2 texelSize = 1.0 / textureSize(depthMapTexture, 0);
-                    depth += texture(depthMapTexture, TexCoord + vec2(0, 1) * texelSize).r;
-                    depth += texture(depthMapTexture, TexCoord + vec2(0, -1) * texelSize).r;
-                    depth += texture(depthMapTexture, TexCoord + vec2(1, 0) * texelSize).r;
-                    depth += texture(depthMapTexture, TexCoord + vec2(-1, 0) * texelSize).r;
+                    depth += texture(depthMapTexture, TexCoord + vec2(0, 1) * texelSize).a;
+                    depth += texture(depthMapTexture, TexCoord + vec2(0, -1) * texelSize).a;
+                    depth += texture(depthMapTexture, TexCoord + vec2(1, 0) * texelSize).a;
+                    depth += texture(depthMapTexture, TexCoord + vec2(-1, 0) * texelSize).a;
                     depth /= 4;
 
+                    vec3 normalOrg = texture(depthMapTexture, TexCoord).rgb * 2 - 1;
+                    vec3 normalUp = texture(depthMapTexture, TexCoord + vec2(0, 1) * texelSize).rgb * 2 - 1;
+
                     vec3 diff = vec3(1);
-                    if (depth - depthOrg > 0.0001) {
+                    if (depth - depthOrg > 0.0001 || dot(normalUp, normalOrg) < 0.3) {
                         diff = texture(screenTexture, TexCoord + vec2(0, 1) * texelSize).rgb;
                         diff += texture(screenTexture, TexCoord + vec2(0, -1) * texelSize).rgb;
                         diff += texture(screenTexture, TexCoord + vec2(1, 0) * texelSize).rgb;
@@ -206,7 +209,7 @@ class Game(Application):
         self.depthPass.bind()
         self.depthPass.depthMap.shader.bind()
         GameObjectSystem.RenderScene(self.depthPass.depthMap.shader)
-        self.depthPass.depthMap.unbind()
+        self.depthPass.unbind()
 
         # Render scene to framebuffer
         self.postProcessingPass.bind()
@@ -229,8 +232,9 @@ class Game(Application):
                     glm.vec3(0.8, 0.5, 0.3), glm.vec3(1),
                     sunHeight)
         else:
+            nightColor = glm.vec3(0.2, 0.5, 0.5);
             lightColor = glm.lerp(
-                    glm.vec3(0.8, 0.5, 0.3), glm.vec3(0.2, 0.5, 0.5) * 0.5,
+                    glm.vec3(0.8, 0.5, 0.3), nightColor * 0.7,
                     -sunHeight)
 
         Model.shader.setUniform3f("lightColor", lightColor)
