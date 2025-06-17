@@ -126,6 +126,7 @@ class Game(Application):
                     }
 
                     vec3 color = texture(screenTexture, TexCoord).rgb * diff;
+                    color = pow(color.rgb, vec3(1.0 / 2));
                     fragColor = vec4(color, 1);
                 }
                 """
