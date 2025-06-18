@@ -113,6 +113,9 @@ class DepthNormalPass:
         glEnable(GL_BLEND);
         self.depthNormalMap.unbind()
 
+    def enable(self):
+        glUseProgram(self.depthNormalMap.shader.program)
+
     def delete(self):
         self.depthNormalMap.delete()
         self.depthNormalMapTexture.delete()
