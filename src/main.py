@@ -249,7 +249,6 @@ class Game(Application):
         title += f"render: {delta_time}ms "
         pg.display.set_caption(title)
 
-        # Render fullscreen quad with post-processing
         self.postProcessingPass.unbind()
 
         glViewport(0, 0, self.window.width, self.window.height)
@@ -259,6 +258,7 @@ class Game(Application):
         self.depthPass.depthMapTexture.bind(1)
         self.postProcessingPass.fb.shader.setUniform1i("depthMapTexture", 1)
 
+        # Render fullscreen quad with post-processing
         glClear(int(GL_COLOR_BUFFER_BIT) | int(GL_DEPTH_BUFFER_BIT))
         self.postProcessingPass.screenTexture.bind(0)
         glUniform1i(glGetUniformLocation(self.postProcessingPass.fb.shader.program, "screenTexture"), 0)
