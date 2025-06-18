@@ -38,6 +38,8 @@ class Game(Application):
         AnimationSystem.SetUp()
         GameObjectSystem.SetUp()
 
+        glFramebuffer.initailizeQuad()
+
         shadowMapShader = glShaderProgram(
                 """
                 #version 330 core
@@ -161,6 +163,7 @@ class Game(Application):
     def OnWindowClose(self):
         self.postProcessingPass.delete()
         self.shadowPass.delete()
+        glFramebuffer.deleteQuad()
         print('Close from Game')
 
     def OnUpdate(self):
@@ -247,15 +250,19 @@ class Game(Application):
         pg.display.set_caption(title)
 
         # Render fullscreen quad with post-processing
-        glViewport(0, 0, self.window.width, self.window.height)
         self.postProcessingPass.unbind()
+
+        glViewport(0, 0, self.window.width, self.window.height)
         self.postProcessingPass.enable()
 
         # # binding depth map
         self.depthPass.depthMapTexture.bind(1)
         self.postProcessingPass.fb.shader.setUniform1i("depthMapTexture", 1)
 
-        self.postProcessingPass.render()
+        glClear(int(GL_COLOR_BUFFER_BIT) | int(GL_DEPTH_BUFFER_BIT))
+        self.postProcessingPass.screenTexture.bind(0)
+        glUniform1i(glGetUniformLocation(self.postProcessingPass.fb.shader.program, "screenTexture"), 0)
+        glDrawArrays(GL_TRIANGLES, 0, 6)
 
         if self.lockCursor:
             pg.mouse.set_pos((self.window.width / 2, self.window.height / 2))

@@ -112,7 +112,6 @@ class DepthNormalPass:
 
 class PostProcessingPass:
     def __init__(self, shaderProgram: glShaderProgram, style: int, width: int, height: int):
-        glFramebuffer.initailizeQuad()
         self.fb = glFramebuffer(shaderProgram, width, height)
         self.fb.bind()
         self.fb.genRenderBuffer(GL_DEPTH24_STENCIL8)
@@ -137,13 +136,6 @@ class PostProcessingPass:
         glUseProgram(self.fb.shader.program)
         glBindVertexArray(glFramebuffer.quad_vao)
 
-    def render(self):
-        glClear(int(GL_COLOR_BUFFER_BIT) | int(GL_DEPTH_BUFFER_BIT))
-        self.screenTexture.bind(0)
-        glUniform1i(glGetUniformLocation(self.fb.shader.program, "screenTexture"), 0)
-        glDrawArrays(GL_TRIANGLES, 0, 6)
-
     def delete(self):
         self.fb.delete()
         self.screenTexture.delete()
-        glFramebuffer.deleteQuad()
