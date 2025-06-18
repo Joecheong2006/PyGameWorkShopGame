@@ -134,7 +134,6 @@ class PostProcessingPass:
 
     def enable(self):
         glUseProgram(self.fb.shader.program)
-        glBindVertexArray(glFramebuffer.quad_vao)
 
     def delete(self):
         self.fb.delete()

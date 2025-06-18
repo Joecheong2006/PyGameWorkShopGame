@@ -251,8 +251,10 @@ class Game(Application):
 
         self.postProcessingPass.unbind()
 
+        # Reset resolution to window size
         glViewport(0, 0, self.window.width, self.window.height)
         self.postProcessingPass.enable()
+        glBindVertexArray(glFramebuffer.quad_vao)
 
         # # binding depth map
         self.depthPass.depthMapTexture.bind(1)
