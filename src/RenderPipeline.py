@@ -32,8 +32,11 @@ class ShadowPass:
     def unbind(self):
         self.shadowMap.unbind()
 
+    def getShader(self) -> glShaderProgram:
+        return self.shadowMap.shader
+
     def enable(self):
-        glUseProgram(self.shadowMap.shader.program)
+        glUseProgram(self.getShader().program)
 
     def delete(self):
         self.shadowMap.delete()
@@ -113,8 +116,11 @@ class DepthNormalPass:
         glEnable(GL_BLEND);
         self.depthNormalMap.unbind()
 
+    def getShader(self) -> glShaderProgram:
+        return self.depthNormalMap.shader
+
     def enable(self):
-        glUseProgram(self.depthNormalMap.shader.program)
+        glUseProgram(self.getShader().program)
 
     def delete(self):
         self.depthNormalMap.delete()
@@ -142,8 +148,11 @@ class PostProcessingPass:
     def unbind(self):
         self.fb.unbind()
 
+    def getShader(self) -> glShaderProgram:
+        return self.fb.shader
+
     def enable(self):
-        glUseProgram(self.fb.shader.program)
+        glUseProgram(self.getShader().program)
 
     def delete(self):
         self.fb.delete()

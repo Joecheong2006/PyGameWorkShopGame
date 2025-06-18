@@ -186,9 +186,6 @@ class Game(Application):
 
         t = pg.time.get_ticks() * 0.0003
 
-        # Shadow Pass
-        self.shadowPass.bind()
-
         # position = 5 * glm.vec3(glm.sin(t), 1, -glm.cos(t))
         axis = glm.normalize(glm.vec3(1, 0, -1))
         position = glm.vec3(glm.rotate(glm.mat4(1.0), t, axis) * glm.vec4(-10, 0, -10, 1.0))
@@ -202,29 +199,30 @@ class Game(Application):
         vp = ortho * view
         lvp = vp.to_list()
 
+        # Shadow Pass
+        self.shadowPass.bind()
         self.shadowPass.enable()
-        self.shadowPass.shadowMap.shader.setUniformMat4("lvp", 1, lvp)
-
-        GameObjectSystem.RenderScene(self.shadowPass.shadowMap.shader)
-
+        shader = self.shadowPass.getShader()
+        shader.setUniformMat4("lvp", 1, lvp)
+        GameObjectSystem.RenderScene(shader)
         self.shadowPass.unbind()
 
         # Depth Pass
         self.depthNormalPass.bind()
         self.depthNormalPass.enable()
-        GameObjectSystem.RenderScene(self.depthNormalPass.depthNormalMap.shader)
+        GameObjectSystem.RenderScene(self.depthNormalPass.getShader())
         self.depthNormalPass.unbind()
 
         # Render scene to framebuffer
         self.postProcessingPass.bind()
-        glClearColor(0.1, 0.1, 0.1, 1.0)
 
-        Model.shader.bind()
+        shader = Model.shader
+        shader.bind()
 
         self.shadowPass.shadowMapTexture.bind(1)
-        Model.shader.setUniform1i("shadowMap", 1)
-        Model.shader.setUniformMat4("lvp", 1, lvp)
-        Model.shader.setUniform3f("lightDir", forward)
+        shader.setUniform1i("shadowMap", 1)
+        shader.setUniformMat4("lvp", 1, lvp)
+        shader.setUniform3f("lightDir", forward)
 
         sunHeight = glm.dot(glm.vec3(0, 1, 0), -forward)
 
@@ -241,10 +239,10 @@ class Game(Application):
                     glm.vec3(0.8, 0.5, 0.3), nightColor * 0.8,
                     -sunHeight)
 
-        Model.shader.setUniform3f("lightColor", lightColor)
+        shader.setUniform3f("lightColor", lightColor)
 
         # Render Scene to screen texture
-        GameObjectSystem.RenderScene(Model.shader)
+        GameObjectSystem.RenderScene(shader)
 
         delta_time: float = (pg.time.get_ticks() - previous_time)
         title += f"render: {delta_time}ms "
@@ -254,17 +252,22 @@ class Game(Application):
 
         # Reset resolution to window size
         glViewport(0, 0, self.window.width, self.window.height)
+        glClear(int(GL_COLOR_BUFFER_BIT) | int(GL_DEPTH_BUFFER_BIT))
+
+        # Enable post-processing
         self.postProcessingPass.enable()
         glBindVertexArray(glFramebuffer.quad_vao)
 
-        # # binding depth map
+        # Binding screen texture
+        self.postProcessingPass.screenTexture.bind(0)
+        shader.setUniform1i("screenTexture", 0)
+
+        # Binding depth map
         self.depthNormalPass.depthNormalMapTexture.bind(1)
-        self.postProcessingPass.fb.shader.setUniform1i("depthMapTexture", 1)
+        shader = self.postProcessingPass.getShader()
+        shader.setUniform1i("depthMapTexture", 1)
 
         # Render fullscreen quad with post-processing
-        glClear(int(GL_COLOR_BUFFER_BIT) | int(GL_DEPTH_BUFFER_BIT))
-        self.postProcessingPass.screenTexture.bind(0)
-        glUniform1i(glGetUniformLocation(self.postProcessingPass.fb.shader.program, "screenTexture"), 0)
         glDrawArrays(GL_TRIANGLES, 0, 6)
 
         if self.lockCursor:
