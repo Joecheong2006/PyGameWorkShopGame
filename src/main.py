@@ -201,7 +201,7 @@ class Game(Application):
         vp = ortho * view
         lvp = vp.to_list()
 
-        self.shadowPass.shadowMap.shader.bind()
+        self.shadowPass.enable()
         self.shadowPass.shadowMap.shader.setUniformMat4("lvp", 1, lvp)
 
         GameObjectSystem.RenderScene(self.shadowPass.shadowMap.shader)

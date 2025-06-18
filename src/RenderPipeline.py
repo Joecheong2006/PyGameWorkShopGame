@@ -32,6 +32,9 @@ class ShadowPass:
     def unbind(self):
         self.shadowMap.unbind()
 
+    def enable(self):
+        glUseProgram(self.shadowMap.shader.program)
+
     def delete(self):
         self.shadowMap.delete()
         self.shadowMapTexture.delete()
