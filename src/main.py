@@ -120,7 +120,7 @@ class Game(Application):
                     vec3 normalUp = texture(depthMapTexture, TexCoord + vec2(0, 1) * texelSize).rgb * 2 - 1;
 
                     vec3 diff = vec3(1);
-                    if (depth - depthOrg > 0.0002 || dot(normalUp, normalOrg) < 0.3) {
+                    if (depth - depthOrg > 0.0001 || dot(normalUp, normalOrg) < 0.3) {
                         diff = texture(screenTexture, TexCoord + vec2(0, 1) * texelSize).rgb;
                         diff += texture(screenTexture, TexCoord + vec2(0, -1) * texelSize).rgb;
                         diff += texture(screenTexture, TexCoord + vec2(1, 0) * texelSize).rgb;
