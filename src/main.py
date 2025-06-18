@@ -262,7 +262,7 @@ class Game(Application):
         self.postProcessingPass.screenTexture.bind(0)
         shader.setUniform1i("screenTexture", 0)
 
-        # Binding depth map
+        # Binding depth normal map
         self.depthNormalPass.depthNormalMapTexture.bind(1)
         shader = self.postProcessingPass.getShader()
         shader.setUniform1i("depthMapTexture", 1)
