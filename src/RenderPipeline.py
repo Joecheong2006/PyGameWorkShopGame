@@ -89,33 +89,33 @@ class DepthNormalPass:
                 }
                 """)
 
-        self.depthMap = glFramebuffer(depthShader, width, height)
-        self.depthMap.bind()
-        self.depthMap.genRenderBuffer(GL_DEPTH24_STENCIL8)
-        self.depthMap.attachRenderBuffer(GL_DEPTH_STENCIL_ATTACHMENT)
-        self.depthMapTexture = glTexture(
-                self.depthMap.width, self.depthMap.height, 
+        self.depthNormalMap = glFramebuffer(depthShader, width, height)
+        self.depthNormalMap.bind()
+        self.depthNormalMap.genRenderBuffer(GL_DEPTH24_STENCIL8)
+        self.depthNormalMap.attachRenderBuffer(GL_DEPTH_STENCIL_ATTACHMENT)
+        self.depthNormalMapTexture = glTexture(
+                self.depthNormalMap.width, self.depthNormalMap.height, 
                 GL_NEAREST, type=GL_FLOAT, mipmap=False, wrapStyle=GL_CLAMP_TO_BORDER, internal=GL_RGBA16F)
-        self.depthMap.attachTexture(self.depthMapTexture)
+        self.depthNormalMap.attachTexture(self.depthNormalMapTexture)
 
-        if not self.depthMap.isCompleted():
+        if not self.depthNormalMap.isCompleted():
             raise RuntimeError("Imcompleted framebuffer")
 
-        self.depthMap.unbind()
+        self.depthNormalMap.unbind()
     
     def bind(self):
-        self.depthMap.bind()
-        glViewport(0, 0, self.depthMap.width, self.depthMap.height)
+        self.depthNormalMap.bind()
+        glViewport(0, 0, self.depthNormalMap.width, self.depthNormalMap.height)
         glClear(int(GL_COLOR_BUFFER_BIT) | int(GL_DEPTH_BUFFER_BIT))
         glDisable(GL_BLEND);
 
     def unbind(self):
         glEnable(GL_BLEND);
-        self.depthMap.unbind()
+        self.depthNormalMap.unbind()
 
     def delete(self):
-        self.depthMap.delete()
-        self.depthMapTexture.delete()
+        self.depthNormalMap.delete()
+        self.depthNormalMapTexture.delete()
 
 class PostProcessingPass:
     def __init__(self, shaderProgram: glShaderProgram, style: int, width: int, height: int):

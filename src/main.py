@@ -85,7 +85,7 @@ class Game(Application):
 
         self.shadowPass = ShadowPass(shadowMapShader, 2048, 2048)
 
-        self.depthPass = DepthNormalPass(PIXEL_WIDTH, PIXEL_HEIGHT)
+        self.depthNormalPass = DepthNormalPass(PIXEL_WIDTH, PIXEL_HEIGHT)
 
         postProcessingShader = glShaderProgram(
                 """
@@ -162,7 +162,7 @@ class Game(Application):
 
     def OnWindowClose(self):
         self.postProcessingPass.delete()
-        self.depthPass.delete()
+        self.depthNormalPass.delete()
         self.shadowPass.delete()
         glFramebuffer.deleteQuad()
         print('Close from Game')
@@ -210,10 +210,10 @@ class Game(Application):
         self.shadowPass.unbind()
 
         # Depth Pass
-        self.depthPass.bind()
-        self.depthPass.depthMap.shader.bind()
-        GameObjectSystem.RenderScene(self.depthPass.depthMap.shader)
-        self.depthPass.unbind()
+        self.depthNormalPass.bind()
+        self.depthNormalPass.depthNormalMap.shader.bind()
+        GameObjectSystem.RenderScene(self.depthNormalPass.depthNormalMap.shader)
+        self.depthNormalPass.unbind()
 
         # Render scene to framebuffer
         self.postProcessingPass.bind()
@@ -258,7 +258,7 @@ class Game(Application):
         glBindVertexArray(glFramebuffer.quad_vao)
 
         # # binding depth map
-        self.depthPass.depthMapTexture.bind(1)
+        self.depthNormalPass.depthNormalMapTexture.bind(1)
         self.postProcessingPass.fb.shader.setUniform1i("depthMapTexture", 1)
 
         # Render fullscreen quad with post-processing
