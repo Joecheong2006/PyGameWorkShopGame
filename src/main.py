@@ -162,6 +162,7 @@ class Game(Application):
 
     def OnWindowClose(self):
         self.postProcessingPass.delete()
+        self.depthPass.delete()
         self.shadowPass.delete()
         glFramebuffer.deleteQuad()
         print('Close from Game')

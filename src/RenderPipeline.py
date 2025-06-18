@@ -113,6 +113,10 @@ class DepthNormalPass:
         glEnable(GL_BLEND);
         self.depthMap.unbind()
 
+    def delete(self):
+        self.depthMap.delete()
+        self.depthMapTexture.delete()
+
 class PostProcessingPass:
     def __init__(self, shaderProgram: glShaderProgram, style: int, width: int, height: int):
         self.fb = glFramebuffer(shaderProgram, width, height)
