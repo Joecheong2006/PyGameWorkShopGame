@@ -186,7 +186,7 @@ class Game(Application):
 
         t = pg.time.get_ticks() * 0.0003
 
-        # position = 5 * glm.vec3(glm.sin(t), 1, -glm.cos(t))
+        # Configure light camera
         axis = glm.normalize(glm.vec3(1, 0, -1))
         position = glm.vec3(glm.rotate(glm.mat4(1.0), t, axis) * glm.vec4(-10, 0, -10, 1.0))
         aspect = self.window.width / self.window.height
