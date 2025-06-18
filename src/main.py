@@ -207,7 +207,7 @@ class Game(Application):
         GameObjectSystem.RenderScene(shader)
         self.shadowPass.unbind()
 
-        # Depth Pass
+        # Depth Normal Pass
         self.depthNormalPass.bind()
         self.depthNormalPass.enable()
         GameObjectSystem.RenderScene(self.depthNormalPass.getShader())
