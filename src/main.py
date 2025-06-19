@@ -187,6 +187,7 @@ class Game(Application):
         t = pg.time.get_ticks() * 0.0003
 
         # Configure light camera
+        playerLocation = GameObjectSystem.FindFirstObjectByType(Player).transform.position
         axis = glm.normalize(glm.vec3(1, 0, -1))
         position = glm.vec3(glm.rotate(glm.mat4(1.0), t, axis) * glm.vec4(-10, 0, -10, 1.0))
         aspect = self.window.width / self.window.height
@@ -195,7 +196,7 @@ class Game(Application):
         p = glm.vec3(0, 1, 0)
         rotation = glm.quatLookAt(-glm.normalize(position), p)
         target = position + forward
-        view = glm.lookAt(position, target, rotation * p)
+        view = glm.lookAt(position + playerLocation, target + playerLocation, rotation * p)
         vp = ortho * view
         lvp = vp.to_list()
 
