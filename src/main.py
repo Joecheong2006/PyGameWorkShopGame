@@ -184,7 +184,7 @@ class Game(Application):
 
         previous_time = pg.time.get_ticks()
 
-        t = pg.time.get_ticks() * 0.0003
+        t = pg.time.get_ticks() * 0.0001
 
         # Configure light camera
         playerLocation = GameObjectSystem.FindFirstObjectByType(Player).transform.position
