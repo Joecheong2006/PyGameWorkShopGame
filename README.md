@@ -42,7 +42,7 @@ A 3D game engine and workshop project built with Pygame and OpenGL. This project
 
 1.  **Running the Game:**
 
-    Navigate to the `src` directory and execute the main script (if one exists) or a relevant example script.  For example (if a `main.py` exists):
+    Navigate to the `PyGameWorkShopGame` directory and execute the main script:
 
     ```bash
     python src/main.py
