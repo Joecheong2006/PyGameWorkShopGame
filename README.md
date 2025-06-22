@@ -1,4 +1,3 @@
-```markdown
 # PyGameWorkShopGame
 
 A 3D game engine and workshop project built with Pygame and OpenGL. This project provides a foundation for creating 3D games, with features for model loading, rendering, and game object management.
@@ -46,8 +45,7 @@ A 3D game engine and workshop project built with Pygame and OpenGL. This project
     Navigate to the `src` directory and execute the main script (if one exists) or a relevant example script.  For example (if a `main.py` exists):
 
     ```bash
-    cd src
-    python main.py
+    python src/main.py
     ```
 
     *Note:* Replace `main.py` with the actual entry point of your game.
@@ -120,4 +118,3 @@ We welcome contributions to the PyGameWorkShopGame project! Please follow these 
 ## License
 
 This project is licensed under the MIT License - see the `LICENSE` file for details.
-```
