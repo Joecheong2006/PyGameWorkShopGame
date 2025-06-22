@@ -40,7 +40,7 @@ class Player(GameObject):
     def __init__(self):
         super().__init__(self)
 
-        self.model = Model("res/N.glb")
+        self.model = Model("res/B.glb")
 
         self.forward: glm.vec3 = glm.vec3(0, 0, 1)
         self.right: glm.vec3 = glm.vec3(1, 0, 0)
@@ -52,7 +52,7 @@ class Player(GameObject):
 
         self.animator = Animator(self.model)
         self.animator.setDefaultState("Idle")
-        self.animator.addAnimationState("FastRunning")
+        self.animator.addAnimationState("FastRunning", timeScale = 1.15)
         self.animator.addAnimationState("Sitting")
 
         self.animator.variables["sitTransition"] = False
