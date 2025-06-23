@@ -21,7 +21,7 @@ class CameraController(GameObject):
 
         if self.camRef == None:
             return
-        self.camRef.calOrthogonalMat(OrthogonalCameraState(-self.distance, self.distance, -self.distance / self.camRef.aspect, self.distance / self.camRef.aspect, 0.1, 100))
+        self.camRef.calOrthogonalMat(OrthogonalCameraState(-self.distance, self.distance, -self.distance / self.camRef.aspect, self.distance / self.camRef.aspect, 1, 100))
         self.camRef.pitch = -30
 
     def wrapAngleDeg(self, angle_deg: float):
