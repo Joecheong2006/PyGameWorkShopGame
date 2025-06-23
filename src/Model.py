@@ -167,6 +167,9 @@ def init_materials(gltf, layout):
             continue
         mat = gltf.materials[entry.materialIndex]
         pbr = mat.pbrMetallicRoughness
+        if pbr == None:
+            materials.append(m)
+            continue
         m.roughness = pbr.roughnessFactor if pbr.roughnessFactor else 1.0
         if m.roughness == 1:
             m.shininess = 0
@@ -316,7 +319,7 @@ def load_animations(gltf):
 
     ordered_node_indexes = order_nodes_root_first(gltf.nodes)
     root = gltf.nodes[ordered_node_indexes[0]]
-    if root.mesh is None and root.rotation is not None:
+    if root.rotation is not None:
         root.rotation = [root.rotation[3], root.rotation[0], root.rotation[1], root.rotation[2]]
     return animNameIndexMap, animations, skins, ordered_node_indexes
 
