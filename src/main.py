@@ -122,15 +122,21 @@ class Game(Application):
                     vec3 normalUp = texture(depthMapTexture, TexCoord + vec2(0, 1) * texelSize).rgb * 2 - 1;
 
                     vec3 diff = vec3(1);
-                    if (depth - depthOrg > 0.0002 || dot(normalUp, normalOrg) < 0.5) {
+                    bool normalCheck = abs(dot(normalUp, normalOrg)) < 0.5;
+
+                    vec3 color = texture(screenTexture, TexCoord).rgb;
+                    if (depth - depthOrg > 0.0002) {
+                        color *= color;
+                    }
+                    else if (normalCheck) {
                         diff = texture(screenTexture, TexCoord + vec2(0, 1) * texelSize).rgb;
                         diff += texture(screenTexture, TexCoord + vec2(0, -1) * texelSize).rgb;
                         diff += texture(screenTexture, TexCoord + vec2(1, 0) * texelSize).rgb;
                         diff += texture(screenTexture, TexCoord + vec2(-1, 0) * texelSize).rgb;
                         diff /= 4;
+                        color *= diff;
                     }
 
-                    vec3 color = texture(screenTexture, TexCoord).rgb * diff;
                     fragColor = vec4(color, 1);
                 }
                 """
