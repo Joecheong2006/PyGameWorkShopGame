@@ -55,6 +55,7 @@ class DepthNormalPass:
 
                 uniform mat4 vp;
                 uniform mat4 model;
+                uniform mat4 inverseModel;
 
                 uniform mat4 jointMatrices[100];
                 uniform bool hasAnimation;
@@ -72,7 +73,7 @@ class DepthNormalPass:
                     }
                     gl_Position = vp * model * skinMatrix * vec4(aPos, 1.0);
                     uv = aUV;
-                    normal = aNormal;
+                    normal = mat3(inverseModel) * mat3(skinMatrix) * aNormal;
                 }
                 """,
                 """
@@ -88,7 +89,7 @@ class DepthNormalPass:
                     if (hasDiffuseTex && texture(diffuseTexture, uv).a < 0.1) {
                         discard;
                     }
-                    fragColor = vec4(normal * 0.5 + 0.5, gl_FragCoord.z);
+                    fragColor = vec4(normalize(normal) * 0.5 + 0.5, gl_FragCoord.z);
                 }
                 """)
 
