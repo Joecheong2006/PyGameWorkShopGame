@@ -68,8 +68,9 @@ class glIndexBuffer:
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 
     def setBuffer(self, data, count: int) -> None:
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, self._id);
+        self.bind()
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, 4 * count, data, GL_STATIC_DRAW);
+        self.count = count
 
     def delete(self) -> None:
         glDeleteBuffers(1, [self._id])
