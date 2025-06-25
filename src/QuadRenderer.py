@@ -14,7 +14,7 @@ class QuadRenderer:
         self.window = window
 
         self.vao = glGenVertexArrays(1)
-        self.vbo = glVertexBuffer(None, 0, GL_DYNAMIC_DRAW)
+        self.vbo = glVertexBuffer(self.vertexBuff, self.vertexBuff.nbytes, GL_DYNAMIC_DRAW)
 
         glBindVertexArray(self.vao)
 
@@ -27,7 +27,7 @@ class QuadRenderer:
         glEnableVertexAttribArray(1)
         glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, stride, ctypes.c_void_p(3 * 4))
 
-        self.ibo = glIndexBuffer(None, 0);
+        self.ibo = glIndexBuffer(self.indexBuff, self.indexBuff.size);
         self.vbIndex = 0
         self.ibIndex = 0
         self.full = False
