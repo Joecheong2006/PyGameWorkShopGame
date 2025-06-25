@@ -10,7 +10,7 @@ class CameraController(GameObject):
 
         self.offset = glm.vec3(0.0, 2.0, 0.0)
         self.cameraRotated = False
-        self.distance: float = 9.0
+        self.distance: float = 10.0
         self.max_pitch = 70
         self.rotationBlendingSpeed = 30
         self.positionBlendingSpeed = 50
@@ -54,7 +54,7 @@ class CameraController(GameObject):
 
             self.playerRef.followCameraDirection(self.camRef)
 
-            desired_position = self.playerRef.transform.position + glm.vec3(0, 1.5, 0) - self.camRef.forward() * self.distance
+            desired_position = self.playerRef.transform.position + glm.vec3(0, 1.5, 0) - self.camRef.forward() * self.distance * 2
 
             self.camRef.position = glm.vec3(glm.lerp(
                 self.camRef.position,
