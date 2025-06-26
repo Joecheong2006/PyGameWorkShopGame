@@ -90,9 +90,6 @@ model_frag_shader = """
         float bias = max(0.0003, mix(0.003, 0, abs(dot(N, L))));
         float depth = texture(shadowMap, lightUV.xy).r;
         float sunHeight = dot(vec3(0, 1, 0), L);
-        if (sunHeight < 0) {
-            return 1;
-        }
         sunHeight = clamp(1 - sunHeight, 0.1, 1);
         return lightUV.z > depth + bias ? 1 - pow(sunHeight - 1, 2) : 1.0;
     }
@@ -107,6 +104,9 @@ model_frag_shader = """
 
         vec3 viewDir = normalize(cameraPos - fragPos);
         vec3 N = normalize(normal);
+        if (!gl_FrontFacing) {
+            N = -N;
+        }
         vec3 L = -normalize(lightDir);
         vec3 R = reflect(-L, N);
 
