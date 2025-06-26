@@ -167,6 +167,7 @@ class Game(Application):
                         color *= diff;
                     }
 
+                    color = pow(color, vec3(1.0 / 1.6));
                     fragColor = vec4(color, 1);
                 }
                 """
@@ -251,8 +252,9 @@ class Game(Application):
         # Depth Normal Pass
         self.depthNormalPass.bind()
         self.depthNormalPass.enable()
-        GameObjectSystem.RenderModel(self.depthNormalPass.getShader())
-        GameObjectSystem.RenderQuads(self.quadRenderer, self.quadShader)
+        shader = self.depthNormalPass.getShader()
+        GameObjectSystem.RenderModel(shader)
+        GameObjectSystem.RenderQuads(self.quadRenderer, shader)
         self.depthNormalPass.unbind()
 
         # Render scene to framebuffer
