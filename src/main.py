@@ -38,6 +38,34 @@ class Game(Application):
         AnimationSystem.SetUp()
         GameObjectSystem.SetUp()
 
+        self.quadRenderer = QuadRenderer(self.window)
+        self.quadShader = glShaderProgram(
+                """
+                #version 330 core
+                layout (location = 0) in vec3 aPos;
+                layout (location = 1) in vec2 aUV;
+
+                uniform mat4 vp;
+                out vec2 uv;
+
+                void main() {
+                    gl_Position = vp * vec4(aPos, 1.0);
+                    uv = aUV;
+                }
+                """,
+                """
+                #version 330 core
+                layout(location = 0) out vec4 fragColor;
+
+                in vec2 uv;
+                uniform sampler2D tex;
+
+                void main() {
+                    fragColor = vec4(0.5, 1, 0.4, 1);
+                }
+                """
+                )
+
         glFramebuffer.initailizeQuad()
 
         shadowMapShader = glShaderProgram(
@@ -171,6 +199,7 @@ class Game(Application):
         self.depthNormalPass.delete()
         self.shadowPass.delete()
         glFramebuffer.deleteQuad()
+        self.quadRenderer.delete()
         print('Close from Game')
 
     def OnUpdate(self):
@@ -276,6 +305,16 @@ class Game(Application):
 
         # Render fullscreen quad with post-processing
         glDrawArrays(GL_TRIANGLES, 0, 6)
+
+        glDisable(GL_CULL_FACE)
+        self.quadShader.bind()
+        cam = GameObjectSystem.mainCamera
+        m = cam.projectionMat * cam.getViewMatrix()
+        self.quadShader.setUniformMat4("vp", 1, m.to_list())
+        q = Quad(glm.vec2(1, 1), glm.vec3(0, 0, 0), glm.angleAxis(t * 10, glm.vec3(0, 1, 0)))
+        self.quadRenderer.drawQuad(q)
+        self.quadRenderer.submit()
+        glEnable(GL_CULL_FACE)
 
         if self.lockCursor:
             pg.mouse.set_pos((self.window.width / 2, self.window.height / 2))
