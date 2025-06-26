@@ -273,17 +273,16 @@ class Game(Application):
 
         sunHeight = glm.dot(glm.vec3(0, 1, 0), -forward)
 
-        lightColor = glm.vec3(0.8, 0.5, 0.3)
         lightColor = glm.vec3(1)
 
         if sunHeight > 0:
             lightColor = glm.lerp(
-                    glm.vec3(0.8, 0.5, 0.3), glm.vec3(1),
+                    glm.vec3(0.9, 0.4, 0.3), glm.vec3(1),
                     sunHeight)
         else:
-            nightColor = glm.vec3(0.2, 0.5, 0.5);
+            nightColor = glm.vec3(0.2, 0.5, 0.3);
             lightColor = glm.lerp(
-                    glm.vec3(0.8, 0.5, 0.3), nightColor * 0.8,
+                    glm.vec3(0.9, 0.4, 0.3), nightColor * 0.5,
                     -sunHeight)
 
         shader.setUniform3f("lightColor", lightColor)
