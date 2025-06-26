@@ -13,7 +13,7 @@ class ShadowPass:
         self.shadowMap.bind()
         self.shadowMapTexture = glTexture(
                 self.shadowMap.width, self.shadowMap.height, 
-                GL_NEAREST, format=GL_DEPTH_COMPONENT, type=GL_FLOAT, mipmap=False, wrapStyle=GL_CLAMP_TO_BORDER)
+                GL_NEAREST, format=GL_DEPTH_COMPONENT, type=GL_FLOAT, mipmap=False, wrapStyle=GL_CLAMP_TO_BORDER, internal=GL_DEPTH_COMPONENT16)
         self.shadowMap.attachTexture(self.shadowMapTexture, attachment=GL_DEPTH_ATTACHMENT)
 
         glDrawBuffer(GL_NONE)
