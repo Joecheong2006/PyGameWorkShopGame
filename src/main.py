@@ -306,16 +306,6 @@ class Game(Application):
         # Render fullscreen quad with post-processing
         glDrawArrays(GL_TRIANGLES, 0, 6)
 
-        glDisable(GL_CULL_FACE)
-        self.quadShader.bind()
-        cam = GameObjectSystem.mainCamera
-        m = cam.projectionMat * cam.getViewMatrix()
-        self.quadShader.setUniformMat4("vp", 1, m.to_list())
-        q = Quad(glm.vec2(1, 1), glm.vec3(0, 0, 0), glm.angleAxis(t * 10, glm.vec3(0, 1, 0)))
-        self.quadRenderer.drawQuad(q)
-        self.quadRenderer.submit()
-        glEnable(GL_CULL_FACE)
-
         if self.lockCursor:
             pg.mouse.set_pos((self.window.width / 2, self.window.height / 2))
 
