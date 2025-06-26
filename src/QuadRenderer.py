@@ -2,10 +2,19 @@ from opengl_util import *
 from pyglm import glm
 
 class Quad:
-    def __init__(self, size: glm.vec2 = glm.vec2(1.0), pos: glm.vec3 = glm.vec3(0.0), angle: float = 0):
-        self.size = size
-        self.pos = pos
-        self.angle = angle
+    def __init__(self, size: glm.vec2 = glm.vec2(1.0), pos: glm.vec3 = glm.vec3(0.0), rotation: glm.quat = glm.quat(glm.vec3(0))):
+        self.size: glm.vec3 = glm.vec3(size[0], size[1], 0)
+        self.pos: glm.vec3 = pos
+        self.rotation: glm.quat = rotation
+        self.vertices = np.array([glm.vec3(0.0)] * 4)
+        self.updateVertices()
+
+    def updateVertices(self):
+        hsize = self.size * 0.5
+        self.vertices[0] = self.rotation * (self.pos + hsize)
+        self.vertices[1] = self.rotation * (self.pos + glm.vec3(-hsize[0], hsize[1], hsize[2]))
+        self.vertices[2] = self.rotation * (self.pos + glm.vec3(hsize[0], -hsize[1], hsize[2]))
+        self.vertices[3] = self.rotation * (self.pos - glm.vec3(hsize[0], hsize[1], hsize[2]))
 
 class QuadRenderer:
     def __init__(self, window: Window, quads_size: int = 4000):
@@ -47,9 +56,6 @@ class QuadRenderer:
             self.full = True
             return
 
-        ratioy = self.window.width / self.window.height
-        size = np.array([q.size[0], q.size[1]], dtype=np.float32)
-
         cur = self.vbIndex / 5;
         self.indexBuff[self.ibIndex + 0] = cur + 0;
         self.indexBuff[self.ibIndex + 1] = cur + 1;
@@ -63,30 +69,30 @@ class QuadRenderer:
         #   (loc = 0) position: 3 x f32 = 12bytes
         #   (loc = 1) uv: 2 x f32 = 8bytes
 
-        self.vertexBuff[self.vbIndex + 0] = q.pos[0] + size[0];
-        self.vertexBuff[self.vbIndex + 1] = q.pos[1] + size[1];
-        self.vertexBuff[self.vbIndex + 2] = q.pos[2];
+        self.vertexBuff[self.vbIndex + 0] = q.vertices[0][0];
+        self.vertexBuff[self.vbIndex + 1] = q.vertices[0][1];
+        self.vertexBuff[self.vbIndex + 2] = q.vertices[0][2];
 
         self.vertexBuff[self.vbIndex + 3] = 0;
         self.vertexBuff[self.vbIndex + 4] = 0;
 
-        self.vertexBuff[self.vbIndex + 5] = q.pos[0] + size[0];
-        self.vertexBuff[self.vbIndex + 6] = q.pos[1];
-        self.vertexBuff[self.vbIndex + 7] = q.pos[2];
+        self.vertexBuff[self.vbIndex + 5] = q.vertices[1][0];
+        self.vertexBuff[self.vbIndex + 6] = q.vertices[1][1];
+        self.vertexBuff[self.vbIndex + 7] = q.vertices[1][2];
 
         self.vertexBuff[self.vbIndex + 8] = 0;
         self.vertexBuff[self.vbIndex + 9] = 1;
 
-        self.vertexBuff[self.vbIndex + 10] = q.pos[0];
-        self.vertexBuff[self.vbIndex + 11] = q.pos[1] + size[1];
-        self.vertexBuff[self.vbIndex + 12] = q.pos[2];
+        self.vertexBuff[self.vbIndex + 10] = q.vertices[2][0];
+        self.vertexBuff[self.vbIndex + 11] = q.vertices[2][1];
+        self.vertexBuff[self.vbIndex + 12] = q.vertices[2][2];
 
         self.vertexBuff[self.vbIndex + 13] = 1;
         self.vertexBuff[self.vbIndex + 14] = 0;
 
-        self.vertexBuff[self.vbIndex + 15] = q.pos[0];
-        self.vertexBuff[self.vbIndex + 16] = q.pos[1];
-        self.vertexBuff[self.vbIndex + 17] = q.pos[2];
+        self.vertexBuff[self.vbIndex + 15] = q.vertices[3][0];
+        self.vertexBuff[self.vbIndex + 16] = q.vertices[3][1];
+        self.vertexBuff[self.vbIndex + 17] = q.vertices[3][2];
 
         self.vertexBuff[self.vbIndex + 18] = 1;
         self.vertexBuff[self.vbIndex + 19] = 1;
