@@ -33,7 +33,7 @@ class QuadRenderer:
         glEnableVertexAttribArray(0)
         glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, stride, ctypes.c_void_p(0))
 
-        # UV (location = 1)
+        # UV (location = 2)
         glEnableVertexAttribArray(2)
         glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, stride, ctypes.c_void_p(3 * 4))
 
@@ -67,7 +67,7 @@ class QuadRenderer:
 
         # Memory Layout: 
         #   (loc = 0) position: 3 x f32 = 12bytes
-        #   (loc = 1) uv: 2 x f32 = 8bytes
+        #   (loc = 2) uv: 2 x f32 = 8bytes
 
         self.vertexBuff[self.vbIndex + 0] = q.vertices[0][0];
         self.vertexBuff[self.vbIndex + 1] = q.vertices[0][1];
@@ -99,10 +99,10 @@ class QuadRenderer:
         self.vbIndex += 20;
 
     def submit(self):
+        glBindVertexArray(self.vao)
         self.vbo.setBuffer(self.vertexBuff, self.vertexBuff.nbytes)
         self.ibo.setBuffer(self.indexBuff, self.indexBuff.size)
 
-        glBindVertexArray(self.vao)
         glDrawElements(GL_TRIANGLES, self.ibIndex, GL_UNSIGNED_INT, None)
         self.vbIndex = 0;
         self.ibIndex = 0;
