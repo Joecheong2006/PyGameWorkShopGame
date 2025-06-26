@@ -1,7 +1,8 @@
 from opengl_util import *
+from pyglm import glm
 
 class Quad:
-    def __init__(self, size: tuple[float, float] = (1 ,1), pos: tuple[float, float] = (0, 0), angle: float = 0):
+    def __init__(self, size: glm.vec2 = glm.vec2(1.0), pos: glm.vec3 = glm.vec3(0.0), angle: float = 0):
         self.size = size
         self.pos = pos
         self.angle = angle
@@ -46,9 +47,9 @@ class QuadRenderer:
             self.full = True
             return
 
-        ratioy = self.window.height / self.window.width
-        size = np.array(q.size, dtype=np.float32) * 0.5
-        pos = np.array([q.pos[0] * ratioy, q.pos[1]], dtype=np.float32)
+        ratioy = self.window.width / self.window.height
+        size = np.array([q.size[0] / ratioy, q.size[1]], dtype=np.float32) * 0.5
+        pos = np.array([q.pos[0], q.pos[1], q.pos[2]], dtype=np.float32)
 
         cur = self.vbIndex / 5;
         self.indexBuff[self.ibIndex] = cur + 0;
@@ -74,28 +75,28 @@ class QuadRenderer:
 
         self.vertexBuff[self.vbIndex] = pos[0] + v1[0] * ratioy;
         self.vertexBuff[self.vbIndex + 1] = pos[1] + v1[1];
-        self.vertexBuff[self.vbIndex + 2] = 0;
+        self.vertexBuff[self.vbIndex + 2] = pos[2];
 
         self.vertexBuff[self.vbIndex + 3] = 0;
         self.vertexBuff[self.vbIndex + 4] = 0;
 
         self.vertexBuff[self.vbIndex + 5] = pos[0] + v2[0] * ratioy;
         self.vertexBuff[self.vbIndex + 6] = pos[1] + v2[1];
-        self.vertexBuff[self.vbIndex + 7] = 0;
+        self.vertexBuff[self.vbIndex + 7] = pos[2];
 
         self.vertexBuff[self.vbIndex + 8] = 0;
         self.vertexBuff[self.vbIndex + 9] = 1;
 
         self.vertexBuff[self.vbIndex + 10] = pos[0] - v2[0] * ratioy;
         self.vertexBuff[self.vbIndex + 11] = pos[1] - v2[1];
-        self.vertexBuff[self.vbIndex + 12] = 0;
+        self.vertexBuff[self.vbIndex + 12] = pos[2];
 
         self.vertexBuff[self.vbIndex + 13] = 1;
         self.vertexBuff[self.vbIndex + 14] = 0;
 
         self.vertexBuff[self.vbIndex + 15] = pos[0] - v1[0] * ratioy;
         self.vertexBuff[self.vbIndex + 16] = pos[1] - v1[1];
-        self.vertexBuff[self.vbIndex + 17] = 0;
+        self.vertexBuff[self.vbIndex + 17] = pos[2];
 
         self.vertexBuff[self.vbIndex + 18] = 1;
         self.vertexBuff[self.vbIndex + 19] = 1;
