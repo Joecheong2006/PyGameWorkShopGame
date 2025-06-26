@@ -13,6 +13,8 @@ from Player import Player
 
 from Model import Model
 
+from QuadTest import QuadTest
+
 class Game(Application):
     def __init__(self):
         scale = (2, 2)
@@ -43,7 +45,7 @@ class Game(Application):
                 """
                 #version 330 core
                 layout (location = 0) in vec3 aPos;
-                layout (location = 1) in vec2 aUV;
+                layout (location = 2) in vec2 aUV;
 
                 uniform mat4 vp;
                 out vec2 uv;
@@ -61,7 +63,7 @@ class Game(Application):
                 uniform sampler2D tex;
 
                 void main() {
-                    fragColor = vec4(0.5, 1, 0.4, 1);
+                    fragColor = vec4(0.5, 1, 0.5, 1);
                 }
                 """
                 )
@@ -180,6 +182,8 @@ class Game(Application):
         # Model("res/TestScene3.glb")
         Model("res/TestScene5.glb")
 
+        QuadTest()
+
         glClearColor(0.1, 0.1, 0.1, 1)
 
         self.lockCursor = True
@@ -226,7 +230,7 @@ class Game(Application):
         axis = glm.normalize(glm.vec3(1, 0, -1))
         position = glm.vec3(glm.rotate(glm.mat4(1.0), t, axis) * glm.vec4(-10, 0, -10, 1.0))
         aspect = self.window.width / self.window.height
-        ortho = glm.ortho(-20, 20, -20 / aspect, 20 / aspect, 0.1, 100)
+        ortho = glm.ortho(-30, 30, -30 / aspect, 30 / aspect, 0.1, 100)
         forward = -glm.normalize(position)
         p = glm.vec3(0, 1, 0)
         rotation = glm.quatLookAt(-glm.normalize(position), p)
@@ -241,16 +245,21 @@ class Game(Application):
         shader = self.shadowPass.getShader()
         shader.setUniformMat4("lvp", 1, lvp)
         GameObjectSystem.RenderModel(shader)
+        GameObjectSystem.RenderQuads(self.quadRenderer, shader)
         self.shadowPass.unbind()
 
         # Depth Normal Pass
         self.depthNormalPass.bind()
         self.depthNormalPass.enable()
         GameObjectSystem.RenderModel(self.depthNormalPass.getShader())
+        GameObjectSystem.RenderQuads(self.quadRenderer, self.quadShader)
         self.depthNormalPass.unbind()
 
         # Render scene to framebuffer
         self.postProcessingPass.bind()
+
+        self.quadShader.bind()
+        GameObjectSystem.RenderQuads(self.quadRenderer, self.quadShader)
 
         shader = Model.shader
         shader.bind()
@@ -277,7 +286,6 @@ class Game(Application):
 
         shader.setUniform3f("lightColor", lightColor)
 
-        # Render Scene to screen texture
         GameObjectSystem.RenderModel(shader)
 
         delta_time: float = (pg.time.get_ticks() - previous_time)
