@@ -53,7 +53,7 @@ class GameObjectSystem:
 
     from opengl_util import glShaderProgram
     @staticmethod
-    def RenderScene(shader: glShaderProgram):
+    def RenderModel(shader: glShaderProgram):
         mainCamera = GameObjectSystem.mainCamera
         if mainCamera == None:
             return

@@ -240,13 +240,13 @@ class Game(Application):
         self.shadowPass.enable()
         shader = self.shadowPass.getShader()
         shader.setUniformMat4("lvp", 1, lvp)
-        GameObjectSystem.RenderScene(shader)
+        GameObjectSystem.RenderModel(shader)
         self.shadowPass.unbind()
 
         # Depth Normal Pass
         self.depthNormalPass.bind()
         self.depthNormalPass.enable()
-        GameObjectSystem.RenderScene(self.depthNormalPass.getShader())
+        GameObjectSystem.RenderModel(self.depthNormalPass.getShader())
         self.depthNormalPass.unbind()
 
         # Render scene to framebuffer
@@ -278,7 +278,7 @@ class Game(Application):
         shader.setUniform3f("lightColor", lightColor)
 
         # Render Scene to screen texture
-        GameObjectSystem.RenderScene(shader)
+        GameObjectSystem.RenderModel(shader)
 
         delta_time: float = (pg.time.get_ticks() - previous_time)
         title += f"render: {delta_time}ms "
