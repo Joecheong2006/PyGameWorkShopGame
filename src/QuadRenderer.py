@@ -48,11 +48,10 @@ class QuadRenderer:
             return
 
         ratioy = self.window.width / self.window.height
-        size = np.array([q.size[0] / ratioy, q.size[1]], dtype=np.float32) * 0.5
-        pos = np.array([q.pos[0], q.pos[1], q.pos[2]], dtype=np.float32)
+        size = np.array([q.size[0], q.size[1]], dtype=np.float32)
 
         cur = self.vbIndex / 5;
-        self.indexBuff[self.ibIndex] = cur + 0;
+        self.indexBuff[self.ibIndex + 0] = cur + 0;
         self.indexBuff[self.ibIndex + 1] = cur + 1;
         self.indexBuff[self.ibIndex + 2] = cur + 3;
         self.indexBuff[self.ibIndex + 3] = cur + 0;
@@ -64,39 +63,30 @@ class QuadRenderer:
         #   (loc = 0) position: 3 x f32 = 12bytes
         #   (loc = 1) uv: 2 x f32 = 8bytes
 
-        c, s = np.cos(q.angle), np.sin(q.angle)
-        mat = np.array([
-            [c, -s],
-            [s,  c]
-        ], dtype=np.float32);
-
-        v1 = mat @ np.array([-size[0], -size[1]], dtype=np.float32)
-        v2 = mat @ np.array([-size[0], size[1]], dtype=np.float32)
-
-        self.vertexBuff[self.vbIndex] = pos[0] + v1[0] * ratioy;
-        self.vertexBuff[self.vbIndex + 1] = pos[1] + v1[1];
-        self.vertexBuff[self.vbIndex + 2] = pos[2];
+        self.vertexBuff[self.vbIndex + 0] = q.pos[0] + size[0];
+        self.vertexBuff[self.vbIndex + 1] = q.pos[1] + size[1];
+        self.vertexBuff[self.vbIndex + 2] = q.pos[2];
 
         self.vertexBuff[self.vbIndex + 3] = 0;
         self.vertexBuff[self.vbIndex + 4] = 0;
 
-        self.vertexBuff[self.vbIndex + 5] = pos[0] + v2[0] * ratioy;
-        self.vertexBuff[self.vbIndex + 6] = pos[1] + v2[1];
-        self.vertexBuff[self.vbIndex + 7] = pos[2];
+        self.vertexBuff[self.vbIndex + 5] = q.pos[0] + size[0];
+        self.vertexBuff[self.vbIndex + 6] = q.pos[1];
+        self.vertexBuff[self.vbIndex + 7] = q.pos[2];
 
         self.vertexBuff[self.vbIndex + 8] = 0;
         self.vertexBuff[self.vbIndex + 9] = 1;
 
-        self.vertexBuff[self.vbIndex + 10] = pos[0] - v2[0] * ratioy;
-        self.vertexBuff[self.vbIndex + 11] = pos[1] - v2[1];
-        self.vertexBuff[self.vbIndex + 12] = pos[2];
+        self.vertexBuff[self.vbIndex + 10] = q.pos[0];
+        self.vertexBuff[self.vbIndex + 11] = q.pos[1] + size[1];
+        self.vertexBuff[self.vbIndex + 12] = q.pos[2];
 
         self.vertexBuff[self.vbIndex + 13] = 1;
         self.vertexBuff[self.vbIndex + 14] = 0;
 
-        self.vertexBuff[self.vbIndex + 15] = pos[0] - v1[0] * ratioy;
-        self.vertexBuff[self.vbIndex + 16] = pos[1] - v1[1];
-        self.vertexBuff[self.vbIndex + 17] = pos[2];
+        self.vertexBuff[self.vbIndex + 15] = q.pos[0];
+        self.vertexBuff[self.vbIndex + 16] = q.pos[1];
+        self.vertexBuff[self.vbIndex + 17] = q.pos[2];
 
         self.vertexBuff[self.vbIndex + 18] = 1;
         self.vertexBuff[self.vbIndex + 19] = 1;
