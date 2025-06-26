@@ -34,8 +34,8 @@ class QuadRenderer:
         glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, stride, ctypes.c_void_p(0))
 
         # UV (location = 1)
-        glEnableVertexAttribArray(1)
-        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, stride, ctypes.c_void_p(3 * 4))
+        glEnableVertexAttribArray(2)
+        glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, stride, ctypes.c_void_p(3 * 4))
 
         self.ibo = glIndexBuffer(self.indexBuff, self.indexBuff.size);
         self.vbIndex = 0
