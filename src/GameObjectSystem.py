@@ -88,6 +88,7 @@ class GameObjectSystem:
         shader.setUniformMat4("model", 1, glm.mat4(1).to_list())
         quadObjects = GameObjectSystem.quadObjects
         for quad in quadObjects:
+            quad.onRender(renderer, quad)
             renderer.drawQuad(quad)
             if renderer.full:
                 renderer.submit()

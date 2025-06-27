@@ -9,6 +9,8 @@ class Quad:
         self.vertices = np.array([glm.vec3(0.0)] * 4)
         self.updateVertices()
 
+        self.onRender = lambda quadRenderer, quad: None
+
     def updateVertices(self):
         hsize = self.size * 0.5
         self.vertices[0] = self.rotation * (self.pos + hsize)
