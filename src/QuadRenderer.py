@@ -9,7 +9,7 @@ class Quad:
         self.vertices = np.array([glm.vec3(0.0)] * 4)
         self.updateVertices()
 
-        self.onRender = lambda quadRenderer, quad: None
+        self.onRender = lambda quad, shader: None
 
     def updateVertices(self):
         hsize = self.size * 0.5
