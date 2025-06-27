@@ -75,8 +75,8 @@ class QuadRenderer:
         self.vertexBuff[self.vbIndex + 1] = q.vertices[0][1];
         self.vertexBuff[self.vbIndex + 2] = q.vertices[0][2];
 
-        self.vertexBuff[self.vbIndex + 3] = 0;
-        self.vertexBuff[self.vbIndex + 4] = 0;
+        self.vertexBuff[self.vbIndex + 3] = 1;
+        self.vertexBuff[self.vbIndex + 4] = 1;
 
         self.vertexBuff[self.vbIndex + 5] = q.vertices[1][0];
         self.vertexBuff[self.vbIndex + 6] = q.vertices[1][1];
@@ -96,8 +96,8 @@ class QuadRenderer:
         self.vertexBuff[self.vbIndex + 16] = q.vertices[3][1];
         self.vertexBuff[self.vbIndex + 17] = q.vertices[3][2];
 
-        self.vertexBuff[self.vbIndex + 18] = 1;
-        self.vertexBuff[self.vbIndex + 19] = 1;
+        self.vertexBuff[self.vbIndex + 18] = 0;
+        self.vertexBuff[self.vbIndex + 19] = 0;
         self.vbIndex += 20;
 
     def submit(self):
