@@ -60,10 +60,11 @@ class Game(Application):
                 layout(location = 0) out vec4 fragColor;
 
                 in vec2 uv;
-                uniform sampler2D tex;
+                uniform sampler2D diffuseTexture;
 
                 void main() {
-                    fragColor = vec4(0.5, 1, 0.5, 1);
+                    vec4 color = texture(diffuseTexture, uv);
+                    fragColor = color;
                 }
                 """
                 )
@@ -259,10 +260,6 @@ class Game(Application):
 
         # Render scene to framebuffer
         self.postProcessingPass.bind()
-
-        self.quadShader.bind()
-        GameObjectSystem.RenderQuads(self.quadRenderer, self.quadShader)
-
         shader = Model.shader
         shader.bind()
 
@@ -288,6 +285,9 @@ class Game(Application):
         shader.setUniform3f("lightColor", lightColor)
 
         GameObjectSystem.RenderModel(shader)
+
+        self.quadShader.bind()
+        GameObjectSystem.RenderQuads(self.quadRenderer, self.quadShader)
 
         delta_time: float = (pg.time.get_ticks() - previous_time)
         title += f"render: {delta_time}ms "
