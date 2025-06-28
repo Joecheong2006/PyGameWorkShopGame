@@ -16,7 +16,7 @@ class QuadTest(GameObject):
             shader.setUniform1i("hasDiffuseTex", 1)
             shader.setUniform1i("diffuseTexture", 3)
 
-        self.quad = Quad(glm.vec2(1, 1), glm.vec3(0, 3, 0))
+        self.quad = Quad(glm.vec2(1, 1), glm.vec3(0, 0.5, -1))
         self.quad.onRender = onRender
 
         GameObjectSystem.AddQuadObject(self.quad)
