@@ -83,7 +83,7 @@ class GameObjectSystem:
 
         m = mainCamera.projectionMat * mainCamera.getViewMatrix()
         shader.setUniformMat4("vp", 1, m.to_list())
-        shader.setUniform1i("hasdiffuseTex", 0)
+        shader.setUniform1i("hasDiffuseTex", 0)
         shader.setUniform1i("hasAnimation", 0)
         shader.setUniformMat4("model", 1, glm.mat4(1).to_list())
         quadObjects = GameObjectSystem.quadObjects
