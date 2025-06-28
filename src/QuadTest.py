@@ -8,8 +8,13 @@ class QuadTest(GameObject):
     def __init__(self):
         super().__init__(self)
 
+        from opengl_util import glTexture, GL_NEAREST
+        self.grass = glTexture.loadTexture('res/grass2.png', GL_NEAREST)
+
         def onRender(quad, shader):
-            pass
+            self.grass.bind(3)
+            shader.setUniform1i("hasDiffuseTex", 1)
+            shader.setUniform1i("diffuseTexture", 3)
 
         self.quad = Quad(glm.vec2(1, 1), glm.vec3(0, 3, 0))
         self.quad.onRender = onRender
