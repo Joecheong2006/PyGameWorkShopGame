@@ -194,7 +194,7 @@ class Game(Application):
                         color *= diff;
                     }
 
-                    color = pow(color, vec3(1.0 / 1.6));
+                    color = pow(color, vec3(1.0 / 1.8));
                     fragColor = vec4(color, 1);
                 }
                 """
