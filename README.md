@@ -2,7 +2,7 @@
 
 A 3D game engine and workshop project built with Pygame and OpenGL. This project provides a foundation for creating 3D games, with features for model loading, rendering, and game object management.
 
-## ScreenShot
+## Screenshot
 ![](pictures/evening.png)
 
 ## Features
