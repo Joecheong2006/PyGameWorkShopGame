@@ -48,10 +48,13 @@ class Game(Application):
                 layout (location = 2) in vec2 aUV;
 
                 uniform mat4 vp;
+                uniform mat4 lvp;
                 out vec2 uv;
+                out vec4 lightFragPos;
 
                 void main() {
                     gl_Position = vp * vec4(aPos, 1.0);
+                    lightFragPos = lvp * vec4(aPos, 1.0);
                     uv = aUV;
                 }
                 """,
@@ -60,10 +63,33 @@ class Game(Application):
                 layout(location = 0) out vec4 fragColor;
 
                 in vec2 uv;
+                in vec4 lightFragPos;
                 uniform sampler2D diffuseTexture;
+                uniform vec3 lightDir;
+                uniform vec3 lightColor;
+
+                uniform sampler2D shadowMap;
+
+                float getShadowFactor(in vec3 lightUV, in vec3 L) {
+                    if (lightUV.z > 1)
+                        lightUV.z = 1;
+                    float depth = texture(shadowMap, lightUV.xy).r;
+                    float sunHeight = dot(vec3(0, 1, 0), L);
+                    sunHeight = clamp(1 - sunHeight, 0.1, 1);
+                    return lightUV.z > depth + 0.001 ? 1 - pow(sunHeight - 1, 2) : 1.0;
+                }
 
                 void main() {
+                    vec3 lightProjPos = lightFragPos.xyz / lightFragPos.w;
+                    vec3 lightUV = lightProjPos * 0.5 + 0.5;
+
+                    vec3 L = -normalize(lightDir);
+                    float shadowFactor = getShadowFactor(lightUV, L);
+
                     vec4 color = texture(diffuseTexture, uv);
+                    color.rgb *= vec3(0.515, 0.8, 0.552);
+
+                    color.rgb = color.rgb * 0.7 * shadowFactor * lightColor;
                     fragColor = color;
                 }
                 """
@@ -184,8 +210,6 @@ class Game(Application):
         # Model("res/TestScene3.glb")
         Model("res/TestScene5.glb")
 
-        QuadTest()
-
         glClearColor(0.1, 0.1, 0.1, 1)
 
         self.lockCursor = True
@@ -286,7 +310,12 @@ class Game(Application):
 
         GameObjectSystem.RenderModel(shader)
 
-        self.quadShader.bind()
+        shader = self.quadShader
+        shader.bind()
+        shader.setUniform1i("shadowMap", 1)
+        shader.setUniformMat4("lvp", 1, lvp)
+        shader.setUniform3f("lightDir", forward)
+        shader.setUniform3f("lightColor", lightColor)
         GameObjectSystem.RenderQuads(self.quadRenderer, self.quadShader)
 
         delta_time: float = (pg.time.get_ticks() - previous_time)
