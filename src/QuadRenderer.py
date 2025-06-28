@@ -13,10 +13,10 @@ class Quad:
 
     def updateVertices(self):
         hsize = self.size * 0.5
-        self.vertices[0] = self.rotation * (self.pos + hsize)
-        self.vertices[1] = self.rotation * (self.pos + glm.vec3(-hsize[0], hsize[1], hsize[2]))
-        self.vertices[2] = self.rotation * (self.pos + glm.vec3(hsize[0], -hsize[1], hsize[2]))
-        self.vertices[3] = self.rotation * (self.pos - glm.vec3(hsize[0], hsize[1], hsize[2]))
+        self.vertices[0] = self.rotation * hsize + self.pos
+        self.vertices[1] = self.rotation * (glm.vec3(-hsize[0], hsize[1], hsize[2])) + self.pos
+        self.vertices[2] = self.rotation * (glm.vec3(hsize[0], -hsize[1], hsize[2])) + self.pos
+        self.vertices[3] = self.rotation * (glm.vec3(-hsize[0], -hsize[1], hsize[2])) + self.pos
 
 class QuadRenderer:
     def __init__(self, window: Window, quads_size: int = 4000):
