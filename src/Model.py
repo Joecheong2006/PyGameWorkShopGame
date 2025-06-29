@@ -70,6 +70,7 @@ model_frag_shader = """
     out vec4 FragColor;
 
     uniform vec3 cameraPos;
+    uniform vec3 lightPos;
 
     uniform vec3 color;
     uniform sampler2D diffuseTexture;
@@ -90,7 +91,7 @@ model_frag_shader = """
         float bias = max(0.0003, mix(0.003, 0, abs(dot(N, L))));
         float depth = texture(shadowMap, lightUV.xy).r;
         float sunHeight = dot(vec3(0, 1, 0), L);
-        sunHeight = clamp(1 - sunHeight, 0.1, 1);
+        sunHeight = clamp(1 - sunHeight, 0.1, 0.6);
         return lightUV.z > depth + bias ? 1 - pow(sunHeight - 1, 2) : 1.0;
     }
 
