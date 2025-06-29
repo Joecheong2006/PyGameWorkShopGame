@@ -31,12 +31,15 @@ class ShadowPass:
 
     def unbind(self):
         self.shadowMap.unbind()
+        glDisable(GL_POLYGON_OFFSET_FILL)
 
     def getShader(self) -> glShaderProgram:
         return self.shadowMap.shader
 
     def enable(self):
         glUseProgram(self.getShader().program)
+        glEnable(GL_POLYGON_OFFSET_FILL)
+        glPolygonOffset(1.0, 2.0)
 
     def delete(self):
         self.shadowMap.delete()
