@@ -254,7 +254,7 @@ class Game(Application):
         # Configure light camera
         playerLocation = GameObjectSystem.FindFirstObjectByType(Player).transform.position
         axis = glm.normalize(glm.vec3(1, 0, -1))
-        position = glm.vec3(glm.rotate(glm.mat4(1.0), t, axis) * glm.vec4(-10, 0, -10, 1.0))
+        position = glm.vec3(glm.rotate(glm.mat4(1.0), t, axis) * glm.vec4(-30, 0, -30, 1.0))
         aspect = self.window.width / self.window.height
         ortho = glm.ortho(-30, 30, -30 / aspect, 30 / aspect, 0.1, 100)
         forward = -glm.normalize(position)
@@ -270,6 +270,7 @@ class Game(Application):
         self.shadowPass.enable()
         shader = self.shadowPass.getShader()
         shader.setUniformMat4("lvp", 1, lvp)
+        shader.setUniform3f("lightPos", position)
         GameObjectSystem.RenderModel(shader)
         GameObjectSystem.RenderQuads(self.quadRenderer, shader)
         self.shadowPass.unbind()
@@ -290,6 +291,7 @@ class Game(Application):
         self.shadowPass.shadowMapTexture.bind(1)
         shader.setUniform1i("shadowMap", 1)
         shader.setUniformMat4("lvp", 1, lvp)
+        shader.setUniform3f("lightPos", position)
         shader.setUniform3f("lightDir", forward)
 
         sunHeight = glm.dot(glm.vec3(0, 1, 0), -forward)
@@ -314,6 +316,7 @@ class Game(Application):
         shader.bind()
         shader.setUniform1i("shadowMap", 1)
         shader.setUniformMat4("lvp", 1, lvp)
+        shader.setUniform3f("lightPos", position)
         shader.setUniform3f("lightDir", forward)
         shader.setUniform3f("lightColor", lightColor)
         GameObjectSystem.RenderQuads(self.quadRenderer, self.quadShader)
